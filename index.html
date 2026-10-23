@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOPS 金融股月自結損益彙整系統 (Web 版)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --panel-alt: #263349;
+      --border: #334155;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --accent: #10b981;
+      --accent-hover: #059669;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --pos: #34d399;
+      --neg: #f87171;
+      --tbl-head: #1e3a5f;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Microsoft JhengHei", "PingFang TC", -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1520px;
+      margin: 0 auto;
+      padding: 20px 24px 48px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.45rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .badge {
+      font-size: 0.78rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.35);
+      font-weight: 600;
+    }
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .card-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #93c5fd;
+      margin: 0 0 12px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .form-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .form-row:last-child { margin-bottom: 0; }
+    label {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    input[type="text"], input[type="number"], select {
+      background: #0f172a;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    input[type="number"] { width: 92px; text-align: center; font-weight: 600; }
+    input[type="text"].ym-input { width: 105px; text-align: center; font-weight: 600; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-warn { background: var(--warn); color: #111827; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-ghost {
+      background: var(--panel-alt);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 6px 11px;
+      font-size: 0.82rem;
+    }
+    .btn-ghost:hover:not(:disabled) { background: #334155; }
+
+    /* Stock chips selector */
+    .stock-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      max-height: 118px;
+      overflow-y: auto;
+      padding: 6px;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 9px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.12s;
+    }
+    .chip.selected {
+      background: rgba(59, 130, 246, 0.25);
+      border-color: #60a5fa;
+      color: #fff;
+    }
+    .chip.updated {
+      border-left: 3px solid var(--accent);
+    }
+
+    /* Status & Progress bar */
+    .status-bar {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .progress-wrap {
+      flex: 1;
+      min-width: 240px;
+    }
+    .progress-track {
+      height: 8px;
+      background: #0f172a;
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      background: var(--panel);
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.86rem;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+    .tab-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      margin-left: 4px;
+      border-radius: 50%;
+      font-size: 0.85rem;
+      line-height: 1;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+    .tab-btn.active .tab-close { color: rgba(255,255,255,0.85); }
+    .tab-close:hover {
+      background: rgba(239, 68, 68, 0.85);
+      color: #fff !important;
+    }
+
+    /* Data Table */
+    .table-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .table-scroll-wrap {
+      max-height: calc(100vh - 210px);
+      min-height: 280px;
+      overflow-y: auto;
+      overflow-x: auto;
+      position: relative;
+    }
+    .table-scroll-wrap table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.88rem;
+    }
+    .table-scroll-wrap thead th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--tbl-head);
+      box-shadow: 0 1px 0 var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th, td {
+      padding: 8px 8px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th {
+      background: var(--tbl-head);
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.35;
+      position: sticky;
+      top: 0;
+    }
+    th.sortable {
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    th.sortable:hover {
+      background: #254a78;
+    }
+    th.sortable.sorted {
+      background: #285285;
+      color: #93c5fd;
+    }
+    .sort-icon {
+      display: inline-block;
+      margin-left: 3px;
+      font-size: 0.72rem;
+      opacity: 0.45;
+    }
+    th.sortable.sorted .sort-icon {
+      opacity: 1;
+      color: #60a5fa;
+    }
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-family: "Consolas", "Monaco", monospace;
+    }
+    td.center { text-align: center; }
+    tr:hover td { background: rgba(255, 255, 255, 0.03); }
+    tr.row-updated td { background: rgba(16, 185, 129, 0.04); }
+    tr.row-loading td { background: rgba(59, 130, 246, 0.08); }
+    .pos { color: var(--pos); font-weight: 600; }
+    .neg { color: var(--neg); font-weight: 600; }
+    .stock-link {
+      color: #60a5fa;
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .stock-link:hover { text-decoration: underline; }
+    .tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      background: #334155;
+      color: #e2e8f0;
+    }
+    .tag-ok { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .tag-db { background: rgba(139, 92, 246, 0.22); color: #c4b5fd; }
+    .tag-wait { background: rgba(59, 130, 246, 0.2); color: #93c5fd; }
+    .tag-yield-high { background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+    .tag-yield-mid { background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-weight: 600; padding: 2px 7px; border-radius: 4px; }
+    .mode-switch {
+      display: inline-flex;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .mode-option {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+      user-select: none;
+      transition: all 0.15s;
+    }
+    .mode-option input[type="radio"] {
+      margin: 0;
+      cursor: pointer;
+    }
+    .mode-option.active-db {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .mode-option.active-force {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+    .source-panel {
+      background: #131f33;
+      border: 1px solid #2b4468;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      font-size: 0.8rem;
+    }
+    @media (max-width: 980px) {
+      .source-panel { grid-template-columns: 1fr; }
+    }
+    .source-box {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(59, 130, 246, 0.28);
+      border-radius: 8px;
+      padding: 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .source-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-weight: 700;
+      color: #93c5fd;
+    }
+    .source-link {
+      color: #38bdf8;
+      text-decoration: none;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      transition: all 0.15s;
+      cursor: pointer;
+    }
+    .source-link:hover {
+      background: rgba(56, 189, 248, 0.25);
+      color: #fff;
+      text-decoration: underline;
+    }
+    .payload-line {
+      font-family: "Consolas", "Monaco", monospace;
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      background: #0b1120;
+      padding: 4px 8px;
+      border-radius: 5px;
+      border: 1px solid #1e293b;
+      white-space: normal;
+      word-break: break-all;
+      line-height: 1.35;
+    }
+    .payload-line a {
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+    .payload-line a:hover {
+      text-decoration: underline;
+      color: #fff;
+    }
+    th.source-th {
+      background: #152945;
+      color: #cbd5e1;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 6px 8px;
+      border-bottom: 1px solid #2b4c7e;
+      border-right: 1px solid #2b4c7e;
+      white-space: normal;
+      line-height: 1.35;
+      position: static;
+    }
+    .card-tabs {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .card-tab-btn {
+      background: #0f172a;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 5px 10px;
+      border-radius: 7px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .card-tab-btn:hover {
+      color: var(--text);
+      border-color: #475569;
+    }
+    .card-tab-btn.active {
+      background: rgba(59, 130, 246, 0.2);
+      color: #60a5fa;
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>
+          🏛️ MOPS 金融股月自結損益彙整系統
+          <span class="badge" id="ymBadge">載入中...</span>
+        </h1>
+      </div>
+      <div style="font-size:0.85rem; color:var(--muted); display:flex; align-items:center; gap:8px;">
+        <span>臺灣證券交易所 (TWSE) ＆ 公開資訊觀測站 (MOPS) 即時數據</span>
+      </div>
+    </header>
+
+    <!-- 分頁切換 -->
+    <div class="tabs" id="tabBar">
+      <button class="tab-btn active" id="tabBtn_INVEST" onclick="switchTab('INVEST')">📊 金融股投資表</button>
+      <button class="tab-btn" id="tabBtn_SUMMARY" onclick="switchTab('SUMMARY')">📋 11509 月自結一覽表</button>
+      <button class="tab-btn" id="tabBtn_SOURCES" onclick="switchTab('SOURCES')">📚 資料來源說明</button>
+      <button class="tab-btn" id="tabBtn_EZSEARCH" onclick="switchTab('EZSEARCH')">📢 自結公告快易查</button>
+    </div>
+
+    <!-- 金融股投資表視圖 (第一分頁) -->
+    <div id="viewInvest" class="table-wrap" style="display:block;">
+      <div style="padding:14px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:rgba(30,41,59,0.5);">
+        <div>
+          <strong style="font-size:1.05rem; color:#93c5fd;">📊 金融股投資表 (有月自結金融股)</strong>
+          <span id="investMetaLabel" style="margin-left:12px; font-size:0.82rem; color:var(--muted);">整合 TWSE 盤後行情、估值指標與股利分派</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <input type="text" id="inputInvestFilter" placeholder="🔍 搜尋代號 / 名稱..." oninput="filterInvestTable(this.value)" style="padding:6px 10px; font-size:0.82rem; width:160px; background:#0f172a; border:1px solid var(--border); color:var(--text); border-radius:6px;" />
+          <button class="btn-ghost" onclick="loadInvestMetrics(true)" title="重新從證交所 API 抓取最新股價、成交量與財務估值指標">🔄 強制重抓指標</button>
+          <button class="btn-primary" onclick="exportInvestExcel()" title="匯出金融股投資表為美化 Excel 試算表">📥 匯出投資表 Excel</button>
+          <button class="btn-ghost" onclick="exportInvestCsv()" title="匯出金融股投資表 CSV 檔">📄 匯出 CSV</button>
+        </div>
+      </div>
+      <div class="table-scroll-wrap" style="max-height: calc(100vh - 210px);">
+        <table>
+          <thead>
+            <tr>
+              <th class="sortable sorted" id="thInv_co_id" style="text-align:left;" onclick="sortInvestTable('co_id')">代號<span class="sort-icon">▲</span></th>
+              <th class="sortable" id="thInv_name" style="text-align:left;" onclick="sortInvestTable('name')">名稱<span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_price" onclick="sortInvestTable('price')">股價 (元)<span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_volume" onclick="sortInvestTable('volume')">成交量 (張)<span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_capital" onclick="sortInvestTable('capital')" title="已發行普通股股本（排除特別股，與 XQ 及券商指標一致）">普通股本 (億元)<span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_nav" onclick="sortInvestTable('nav')">淨值 (元)<span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_eps_self" onclick="sortInvestTable('eps_self_cum')"><span id="lblInvSelfMonth">EPS(9月自結)</span><span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_eps" onclick="sortInvestTable('eps')">EPS (元)<span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_dividend" onclick="sortInvestTable('dividend')">配息 (元)<span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_pe" onclick="sortInvestTable('pe')">本益比<span class="sort-icon">⇅</span></th>
+              <th class="sortable" id="thInv_yield" onclick="sortInvestTable('yield')">殖利率 (%)<span class="sort-icon">⇅</span></th>
+              <th style="width:105px; text-align:center;">損益明細</th>
+            </tr>
+          </thead>
+          <tbody id="investTbody">
+            <tr><td colspan="12" class="center" style="padding:32px; color:var(--muted);">載入中...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 自結清單視圖 (第二分頁 - 包含年月設定、個股更新、狀態列與清單表格) -->
+    <div id="viewSummary" style="display:none;">
+      <!-- 自結清單專屬工具列 -->
+      <div style="background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 18px; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <strong id="summaryTabTitle" style="font-size:1.05rem; color:#93c5fd;">📋 金融股月自結損益一覽表</strong>
+          <span id="summaryMetaLabel" style="margin-left:12px; font-size:0.82rem; color:var(--muted);">MOPS 官方公告月自結損益彙整與 1~12 月歷史損益對齊</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-ghost" id="btnToggleSummaryControls" onclick="toggleSummaryControls()" style="padding:5px 12px; font-size:0.84rem; border-color:rgba(59,130,246,0.4); color:#93c5fa;" title="點擊切換顯示或隱藏清單年月、年度選擇與金融股更新設定面板">
+            ⚙️ <span id="lblToggleSummaryControls">展開更新設定</span>
+          </button>
+          <button class="btn-accent" id="btnExportExcel" onclick="exportExcel()">📥 匯出 Excel (.xlsx)</button>
+          <button class="btn-ghost" id="btnExportCsv" onclick="exportCsv()">📄 匯出清單 CSV</button>
+        </div>
+      </div>
+
+      <div class="controls-grid" id="summaryControlsGrid" style="display:none;">
+        <!-- 1. 清單年月與比較年度設定 + 資料來源 Tabs -->
+        <div class="card">
+          <div class="card-title" style="gap:8px; flex-wrap:wrap;">
+            <div class="card-tabs">
+              <button class="card-tab-btn active" id="btnCardTab_config" onclick="switchCard1Tab('config')">
+                ① 清單年月 & 兩年度選擇
+              </button>
+              <button class="card-tab-btn" id="btnCardTab_srcList" onclick="switchCard1Tab('srcList')">
+                📋 自結清單 資料來源
+              </button>
+              <button class="card-tab-btn" id="btnCardTab_srcComp" onclick="switchCard1Tab('srcComp')">
+                📈 個股自結損益表 資料來源
+              </button>
+            </div>
+            <button class="btn-ghost" id="btnResetYears" onclick="resetDefaultYears()">重設預設年度</button>
+          </div>
+
+          <!-- Tab Pane 1: 清單年月 & 兩年度選擇 -->
+          <div id="card1Pane_config">
+            <div class="form-row">
+              <label>最新清單年月 (民國 YYYMM)：</label>
+              <input type="text" id="inputYm" class="ym-input" value="11509" placeholder="例: 11509" />
+              <button class="btn-ghost" id="btnLoadList" onclick="loadList()">🔄 載入清單</button>
+            </div>
+            <div class="form-row" style="margin-top:12px;">
+              <label>比較年度 1 (基準/上一年度)：</label>
+              <input type="number" id="inputYear1" min="102" max="130" value="114" onchange="onYearChange()" />
+              <span style="color:var(--muted);">vs</span>
+              <label>比較年度 2 (目標/今年度)：</label>
+              <input type="number" id="inputYear2" min="102" max="130" value="115" onchange="onYearChange()" />
+            </div>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:8px;">
+              💡 預設為「上一年度」與「今年度」，可自由調整任意兩個民國年度進行 1~12 月對齊比較。
+            </div>
+          </div>
+
+          <!-- Tab Pane 2: 自結清單 (彙總表) 資料來源 -->
+          <div id="card1Pane_srcList" style="display:none;">
+            <div class="source-box">
+              <div class="source-box-header">
+                <span>📋 自結清單 (彙總表) 資料來源</span>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <a id="lnkListDirect" class="source-link" href="/api/open_mops?type=list&ym=11509&market=1" target="_blank" rel="noopener" title="透過後端取得 MOPS 動態驗證網址並直接開啟該年月自結清單原始報表">
+                    🔗 點此直接開啟 <span id="lblListYmBtn">11509</span> 原始報表 ↗
+                  </a>
+                  <a class="source-link" href="https://mops.twse.com.tw/mops/#/web/t138sb01" target="_blank" rel="noopener" title="開啟公開資訊觀測站 t138sb01 查詢畫面">
+                    🌐 MOPS 查詢頁 (t138sb01) ↗
+                  </a>
+                </div>
+              </div>
+              <div class="payload-line">
+                <a id="lnkListPayload" href="/api/open_mops?type=list&ym=11509&market=1" target="_blank" rel="noopener" title="點擊直接開啟此 Payload 對應之 MOPS 原始報表">
+                  <strong>POST URL:</strong> https://mops.twse.com.tw/mops/api/redirectToOld<br/>
+                  <strong>Payload:</strong> <span id="txtListPayload">{"apiName":"ajax_t138sb01","parameters":{"CK2":"1","YM1":"11509","CK1":"1","encodeURIComponent":1,"firstin":1,"step":1,"first":1}}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab Pane 3: 個股月自結損益表 資料來源 -->
+          <div id="card1Pane_srcComp" style="display:none;">
+            <div class="source-box">
+              <div class="source-box-header">
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                  <span>📈 個股月自結損益表 資料來源</span>
+                  <select id="sourceCoSelect" onchange="onSourceCoChange(this.value)" style="padding:2px 6px; font-size:0.78rem; background:#0f172a; color:#f8fafc; border:1px solid #334155; border-radius:4px;">
+                    <option value="2881">2881 富邦金</option>
+                  </select>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                  <a id="lnkCompY1Direct" class="source-link" href="/api/open_mops?type=company&co_id=2881&year=114" target="_blank" rel="noopener" title="直接開啟該個股比較年度1之 MOPS 原始自結損益表">
+                    🔗 開啟 <span id="lblCompY1Btn">114</span>年報表 ↗
+                  </a>
+                  <a id="lnkCompY2Direct" class="source-link" href="/api/open_mops?type=company&co_id=2881&year=115" target="_blank" rel="noopener" title="直接開啟該個股比較年度2之 MOPS 原始自結損益表">
+                    🔗 開啟 <span id="lblCompY2Btn">115</span>年報表 ↗
+                  </a>
+                  <a class="source-link" href="https://mops.twse.com.tw/mops/#/web/t138sb02_q1" target="_blank" rel="noopener" title="開啟公開資訊觀測站 t138sb02_q1 查詢畫面">
+                    🌐 MOPS 查詢頁 (t138sb02_q1) ↗
+                  </a>
+                </div>
+              </div>
+              <div class="payload-line">
+                <a id="lnkCompPayload" href="/api/open_mops?type=company&co_id=2881&year=115" target="_blank" rel="noopener" title="點擊直接開啟此個股對應之 MOPS 原始報表">
+                  <strong>POST URL:</strong> https://mops.twse.com.tw/mops/api/redirectToOld<br/>
+                  <strong>Payload (查詢入口):</strong> <span id="txtCompQ1Payload">{"apiName":"ajax_t138sb02_q1","parameters":{"co_id":"2881","year":"115","encodeURIComponent":1,"step":1,"firstin":1,"off":1}}</span><br/>
+                  <strong>Payload (報表明細):</strong> <span id="txtCompDataPayload">{"apiName":"ajax_t138sb02","parameters":{"encodeURIComponent":1,"step":1,"firstin":1,"off":1,"CK2":"1","BK1":"2","TYPEK":"sii","YEAR":"115","COMP":"2881"}}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 個股選擇與批次更新 -->
+        <div class="card">
+          <div class="card-title">
+            <span>② 選擇要更新月自結損益的金融股 (<span id="selectedCount">0</span> / <span id="totalFinCount">0</span> 檔)</span>
+            <div style="display:flex; gap:6px;">
+              <button class="btn-ghost" onclick="selectPreset(['2881','2882','2891','2884','2885'])">預設五檔</button>
+              <button class="btn-ghost" onclick="selectTopN(3)">前三檔</button>
+              <button class="btn-ghost" onclick="selectAll(true)">全選 (ALL)</button>
+              <button class="btn-ghost" onclick="selectAll(false)">清除</button>
+            </div>
+          </div>
+          <div class="stock-chips" id="stockChips"></div>
+          <div class="form-row" style="margin-top:12px; justify-content:space-between;">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-primary" id="btnUpdateSelected" onclick="updateSelectedStocks(false)">
+                🚀 更新選取個股 (<span id="btnSelectedNum">0</span> 檔)
+              </button>
+              <button class="btn-warn" id="btnUpdateAll" onclick="updateAllStocks()">
+                ⚡ 一鍵更新全部 (ALL)
+              </button>
+              <button class="btn-danger" id="btnStop" onclick="stopUpdating()" style="display:none;">
+                ⏹ 停止
+              </button>
+            </div>
+            <div class="mode-switch" title="SQLite3 讀取/更新策略">
+              <label class="mode-option" id="lblModeForce">
+                <input type="radio" name="fetchMode" value="force" onchange="onFetchModeChange()" />
+                🔄 強制重抓
+              </label>
+              <label class="mode-option active-db" id="lblModeDb">
+                <input type="radio" name="fetchMode" value="db" checked onchange="onFetchModeChange()" />
+                🗄️ 資料庫優先
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 狀態與進度列 -->
+      <div class="status-bar" style="margin-bottom:14px;">
+        <div class="progress-wrap">
+          <div style="display:flex; justify-content:space-between; font-size:0.86rem;">
+            <span id="statusText">正在初始化並讀取最新月自結清單...</span>
+            <span id="progressCount" style="color:var(--muted);"></span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressBar"></div>
+          </div>
+        </div>
+        <div style="font-size:0.82rem; color:var(--muted);">
+          單位：新台幣仟元 ｜ 點擊已更新之個股名稱可切換檢視 1~12 月完整對齊表
+        </div>
+      </div>
+
+      <!-- 個股快捷分頁列 (移至此區塊，箭頭所指位置) -->
+      <div class="tabs" id="companyTabsBar" style="display:none; margin-bottom:14px; background:#0f172a; border:1px solid var(--border); border-radius:8px; padding:10px 14px; gap:6px; align-items:center;">
+        <!-- 由 renderCompanyTabs() 動態生成 -->
+      </div>
+
+      <!-- 1. 自結清單表格 (支援垂直捲動與固定表頭) -->
+      <div id="summaryTableWrap" class="table-wrap">
+        <div class="table-scroll-wrap" style="max-height: 480px;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:42px;"><input type="checkbox" id="chkAllTable" onchange="selectAll(this.checked)" /></th>
+                <th class="sortable sorted" id="thSort_co_id" style="text-align:left;" onclick="sortTable('co_id')">金融股 (代號 名稱)<span class="sort-icon">▲</span></th>
+                <th class="sortable" id="thSort_report_type" onclick="sortTable('report_type')">報表類型<span class="sort-icon">⇅</span></th>
+                <th class="sortable" id="thListMon" onclick="sortTable('list_month_pretax')">115/09<br>本月稅前損益(清單)<span class="sort-icon">⇅</span></th>
+                <th class="sortable" id="thListCum" onclick="sortTable('list_cum_pretax')">115/09<br>本年累計稅前損益(清單)<span class="sort-icon">⇅</span></th>
+                <th class="sortable" id="thY1Mon" onclick="sortTable('y1_month_pretax')">114年度<br>本月稅前損益<span class="sort-icon">⇅</span></th>
+                <th class="sortable" id="thY1Cum" onclick="sortTable('y1_cum_pretax')">114年度<br>本年累計稅前損益<span class="sort-icon">⇅</span></th>
+                <th class="sortable" id="thY2Mon" onclick="sortTable('y2_month_pretax')">115年度<br>本月稅前損益<span class="sort-icon">⇅</span></th>
+                <th class="sortable" id="thY2Cum" onclick="sortTable('y2_cum_pretax')">115年度<br>本年累計稅前損益<span class="sort-icon">⇅</span></th>
+                <th class="sortable" id="thSort_cum_yoy" onclick="sortTable('cum_yoy')">累計稅前<br>YoY<span class="sort-icon">⇅</span></th>
+                <th class="sortable" id="thSort_status" onclick="sortTable('status')">狀態 / 操作<span class="sort-icon">⇅</span></th>
+              </tr>
+            </thead>
+            <tbody id="summaryTbody">
+              <tr><td colspan="11" class="center" style="padding:32px; color:var(--muted);">載入中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 2. 個股 1~12 月明細視圖 -->
+      <div id="viewCompany" class="table-wrap" style="display:none; margin-top:0;">
+        <div style="padding:14px 18px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:300px;">
+            <div>
+              <strong id="compTitle" style="font-size:1.1rem; color:#93c5fd;"></strong>
+              <span id="compSubtitle" style="margin-left:12px; font-size:0.85rem; color:var(--muted);"></span>
+            </div>
+            <div id="compSourceBox" style="margin-top:8px;"></div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <button class="btn-accent" onclick="exportCompanyExcel()">📥 匯出此股 Excel</button>
+            <button class="btn-ghost" onclick="exportCompanyCsv()">📄 匯出此股 CSV</button>
+            <button class="btn-ghost" onclick="switchTab('SUMMARY')">← 返回自結清單</button>
+          </div>
+        </div>
+        <div class="table-scroll-wrap" style="max-height: calc(100vh - 240px);">
+          <table>
+            <thead>
+              <tr>
+                <th>月份</th>
+                <th id="thCompY1Mon">114年度<br>本月稅前損益</th>
+                <th id="thCompY1Cum">114年度<br>本年累計稅前損益</th>
+                <th id="thCompY2Mon">115年度<br>本月稅前損益</th>
+                <th id="thCompY2Cum">115年度<br>本年累計稅前損益</th>
+                <th>單月稅前<br>YoY</th>
+                <th>累計稅前<br>YoY</th>
+              </tr>
+            </thead>
+            <tbody id="companyTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 資料來源說明視圖 (最後一個分頁) -->
+    <div id="viewSources" class="table-wrap" style="display:none; padding:24px 28px; background:var(--panel);">
+      <div style="border-bottom:1px solid var(--border); padding-bottom:16px; margin-bottom:24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="margin:0 0 6px 0; font-size:1.25rem; color:#93c5fd; display:flex; align-items:center; gap:8px;">
+            📚 系統資料來源與 API 規格彙整
+          </h2>
+          <div style="font-size:0.86rem; color:var(--muted);">
+            本系統所有金融股資料均直接取自官方公開管道，包含臺灣證券交易所 (TWSE) 與公開資訊觀測站 (MOPS)，並搭配 SQLite3 本地持久化快取。
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="btn-ghost" onclick="toggleAllSourceBlocks()" style="padding:4px 12px; font-size:0.82rem; border-color:rgba(59,130,246,0.4); color:#93c5fa;" title="一鍵全部展開或收合下方三個區塊">
+            ↕️ 全部收合 / 展開
+          </button>
+          <a class="source-link" href="https://mops.twse.com.tw/" target="_blank" rel="noopener">🌐 公開資訊觀測站 (MOPS) ↗</a>
+          <a class="source-link" href="https://www.twse.com.tw/" target="_blank" rel="noopener">🌐 臺灣證券交易所 (TWSE) ↗</a>
+          <a class="source-link" href="https://openapi.twse.com.tw/" target="_blank" rel="noopener">🌐 TWSE Open Data 平台 ↗</a>
+        </div>
+      </div>
+
+      <!-- 區塊 1: 四大核心來源總覽卡片 (支援 Toggle) -->
+      <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; margin-bottom:12px; background:#0f172a; padding:10px 16px; border:1px solid var(--border); border-radius:8px;" onclick="toggleSourceBlock(1)">
+        <h3 style="margin:0; font-size:1.02rem; color:#93c5fd; display:flex; align-items:center; gap:8px;">
+          <span id="icoSrc1" style="font-size:0.8rem; color:#93c5fd; display:inline-block; transition:transform 0.2s;">▼</span>
+          🏛️ 四大核心來源總覽架構
+        </h3>
+        <button class="btn-ghost" id="btnSrc1" style="padding:3px 10px; font-size:0.8rem; border-color:rgba(59,130,246,0.4);" onclick="event.stopPropagation(); toggleSourceBlock(1)">
+          👁️ 收合卡片
+        </button>
+      </div>
+      <div id="srcBlock1" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-bottom:28px;">
+        <!-- Card 1: MOPS 月自結 -->
+        <div style="background:#0f172a; border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:16px 18px;">
+          <div style="font-size:0.95rem; font-weight:700; color:#60a5fa; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span>① 公開資訊觀測站 (MOPS)</span>
+            <span class="badge" style="background:rgba(59,130,246,0.15); color:#60a5fa; border:none;">核心自結</span>
+          </div>
+          <div style="font-size:0.83rem; color:#cbd5e1; line-height:1.6;">
+            • <b>全市場自結彙總表</b>：當月金控/銀行自結營收、稅前淨利與 YoY。<br/>
+            • <b>歷史 1~12 月明細</b>：歷年逐月單月/累計自結稅前損益。<br/>
+            • <b>發布週期</b>：每月 1~10 號各金融機構自結公告時。
+          </div>
+        </div>
+
+        <!-- Card 2: TWSE 盤後行情 -->
+        <div style="background:#0f172a; border:1px solid rgba(16,185,129,0.3); border-radius:8px; padding:16px 18px;">
+          <div style="font-size:0.95rem; font-weight:700; color:#34d399; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span>② 證交所盤後指標 (TWSE)</span>
+            <span class="badge" style="background:rgba(16,185,129,0.15); color:#34d399; border:none;">盤後行情</span>
+          </div>
+          <div style="font-size:0.83rem; color:#cbd5e1; line-height:1.6;">
+            • <b>估值指標 (BWIBBU_d)</b>：收盤價、殖利率 (%)、本益比 (PE)、PB。<br/>
+            • <b>收盤行情 (STOCK_DAY_ALL)</b>：日成交股數 (換算成交張數)。<br/>
+            • <b>發布週期</b>：每個台股營業日約 14:30~15:00 盤後結算。
+          </div>
+        </div>
+
+        <!-- Card 3: TWSE Open Data -->
+        <div style="background:#0f172a; border:1px solid rgba(245,158,11,0.3); border-radius:8px; padding:16px 18px;">
+          <div style="font-size:0.95rem; font-weight:700; color:#fbbf24; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span>③ 證交所 Open Data (OpenAPI)</span>
+            <span class="badge" style="background:rgba(245,158,11,0.15); color:#fbbf24; border:none;">財務與股利</span>
+          </div>
+          <div style="font-size:0.83rem; color:#cbd5e1; line-height:1.6;">
+            • <b>除權除息公告 (t187ap45_L)</b>：盈餘/法定公積/資本公積現金股利。<br/>
+            • <b>資產負債表 (t187ap07_L)</b>：實收股本(億元)、每股淨值 (NAV)。<br/>
+            • <b>綜合損益表 (t187ap14_L)</b>：官方正式公告基本每股盈餘 (EPS)。
+          </div>
+        </div>
+
+        <!-- Card 4: SQLite3 快取 -->
+        <div style="background:#0f172a; border:1px solid rgba(168,85,247,0.3); border-radius:8px; padding:16px 18px;">
+          <div style="font-size:0.95rem; font-weight:700; color:#c084fc; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <span>④ 本地 / 雲端快取 (SQLite3)</span>
+            <span class="badge" style="background:rgba(168,85,247,0.15); color:#c084fc; border:none;">毫秒讀取</span>
+          </div>
+          <div style="font-size:0.83rem; color:#cbd5e1; line-height:1.6;">
+            • <b>資料庫檔案</b>：<code>mops_self_profit.db</code>。<br/>
+            • <b>持久化快取</b>：儲存清單、個股歷年損益與投資表指標。<br/>
+            • <b>雙模式支援</b>：「資料庫優先」極速查詢與「強制重抓」即時更新。
+          </div>
+        </div>
+      </div>
+
+      <!-- 區塊 2: 詳細來源規格表格 (支援 Toggle) -->
+      <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; margin:24px 0 12px 0; background:#0f172a; padding:10px 16px; border:1px solid var(--border); border-radius:8px;" onclick="toggleSourceBlock(2)">
+        <h3 style="margin:0; font-size:1.02rem; color:#93c5fd; display:flex; align-items:center; gap:8px;">
+          <span id="icoSrc2" style="font-size:0.8rem; color:#93c5fd; display:inline-block; transition:transform 0.2s;">▼</span>
+          📋 詳細 API 端點、網址與資料欄位對照清單
+        </h3>
+        <button class="btn-ghost" id="btnSrc2" style="padding:3px 10px; font-size:0.8rem; border-color:rgba(59,130,246,0.4);" onclick="event.stopPropagation(); toggleSourceBlock(2)">
+          👁️ 收合清單
+        </button>
+      </div>
+      <div id="srcBlock2" style="overflow-x:auto; margin-bottom:28px;">
+        <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+          <thead>
+            <tr style="background:#1e293b; color:#93c5fd; text-align:left;">
+              <th style="padding:10px 12px; border:1px solid var(--border); width:170px;">資料項目 / 功能</th>
+              <th style="padding:10px 12px; border:1px solid var(--border); width:130px;">來源機構</th>
+              <th style="padding:10px 12px; border:1px solid var(--border);">原始 API / 網址路徑</th>
+              <th style="padding:10px 12px; border:1px solid var(--border); width:210px;">本系統對應欄位 / 指標</th>
+              <th style="padding:10px 12px; border:1px solid var(--border); width:110px;">更新時機</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding:10px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+                當月自結彙總清單<br><span style="font-size:0.75rem; color:var(--muted); font-weight:normal;">(ajax_t138sb01)</span>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">公開資訊觀測站 (MOPS)</td>
+              <td style="padding:10px 12px; border:1px solid var(--border);">
+                <div style="font-family:Consolas, monospace; font-size:0.78rem; color:#38bdf8;">POST https://mops.twse.com.tw/mops/api/redirectToOld</div>
+                <div style="font-size:0.75rem; color:var(--muted); margin-top:3px;">
+                  Payload: <code>{"apiName":"ajax_t138sb01","parameters":{"YM1":"11509",...}}</code>
+                </div>
+                <div style="margin-top:4px;">
+                  <a class="source-link" href="https://mops.twse.com.tw/mops/#/web/t138sb01" target="_blank" rel="noopener">MOPS 查詢畫面 ↗</a>
+                </div>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">
+                自結清單、當月營收、本月稅前損益、累計稅前損益、去年同期累計、YoY%
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">每月 1~10 號</td>
+            </tr>
+
+            <tr>
+              <td style="padding:10px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+                個股歷月自結明細<br><span style="font-size:0.75rem; color:var(--muted); font-weight:normal;">(ajax_t138sb02)</span>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">公開資訊觀測站 (MOPS)</td>
+              <td style="padding:10px 12px; border:1px solid var(--border);">
+                <div style="font-family:Consolas, monospace; font-size:0.78rem; color:#38bdf8;">POST https://mops.twse.com.tw/mops/api/redirectToOld</div>
+                <div style="font-size:0.75rem; color:var(--muted); margin-top:3px;">
+                  Payload: <code>{"apiName":"ajax_t138sb02","parameters":{"YEAR":"115","COMP":"2881",...}}</code>
+                </div>
+                <div style="margin-top:4px;">
+                  <a class="source-link" href="https://mops.twse.com.tw/mops/#/web/t138sb02_q1" target="_blank" rel="noopener">MOPS 查詢畫面 ↗</a>
+                </div>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">
+                1~12月逐月營收、累計營收、單月稅前純益、累計稅前純益、YoY%
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">每月 1~10 號</td>
+            </tr>
+
+            <tr>
+              <td style="padding:10px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+                盤後個股本益比與殖利率<br><span style="font-size:0.75rem; color:var(--muted); font-weight:normal;">(BWIBBU_d)</span>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">臺灣證券交易所 (TWSE)</td>
+              <td style="padding:10px 12px; border:1px solid var(--border);">
+                <div style="font-family:Consolas, monospace; font-size:0.78rem;">
+                  <a class="source-link" href="https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d?response=json" target="_blank" rel="noopener">
+                    GET https://www.twse.com.tw/rwd/zh/afterTrading/BWIBBU_d?response=json ↗
+                  </a>
+                </div>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">
+                <b>股價</b> (元)、<b>殖利率</b> (%)、<b>本益比</b> (PE)、<b>PB</b> (股價淨值比)、股利年度
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">營業日 14:30</td>
+            </tr>
+
+            <tr>
+              <td style="padding:10px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+                每日收盤成交行情<br><span style="font-size:0.75rem; color:var(--muted); font-weight:normal;">(STOCK_DAY_ALL)</span>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">證交所 OpenAPI</td>
+              <td style="padding:10px 12px; border:1px solid var(--border);">
+                <div style="font-family:Consolas, monospace; font-size:0.78rem;">
+                  <a class="source-link" href="https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL" target="_blank" rel="noopener">
+                    GET https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL ↗
+                  </a>
+                </div>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">
+                <b>成交量</b> (成交股數換算為張數)、收盤價 (備援)
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">營業日盤後</td>
+            </tr>
+
+            <tr>
+              <td style="padding:10px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+                除權息與股利分派公告<br><span style="font-size:0.75rem; color:var(--muted); font-weight:normal;">(t187ap45_L)</span>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">證交所 OpenAPI</td>
+              <td style="padding:10px 12px; border:1px solid var(--border);">
+                <div style="font-family:Consolas, monospace; font-size:0.78rem;">
+                  <a class="source-link" href="https://openapi.twse.com.tw/v1/opendata/t187ap45_L" target="_blank" rel="noopener">
+                    GET https://openapi.twse.com.tw/v1/opendata/t187ap45_L ↗
+                  </a>
+                </div>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">
+                <b>配息</b> (盈餘分配 + 法定公積 + 資本公積合計現金股利)、股利年度
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">除權息公告即時</td>
+            </tr>
+
+            <tr>
+              <td style="padding:10px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+                上市公司基本資料 (普通股股本)<br><span style="font-size:0.75rem; color:var(--muted); font-weight:normal;">(t187ap03_L)</span>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">證交所 OpenAPI</td>
+              <td style="padding:10px 12px; border:1px solid var(--border);">
+                <div style="font-family:Consolas, monospace; font-size:0.78rem;">
+                  <a class="source-link" href="https://openapi.twse.com.tw/v1/opendata/t187ap03_L" target="_blank" rel="noopener">
+                    GET https://openapi.twse.com.tw/v1/opendata/t187ap03_L ↗
+                  </a>
+                </div>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">
+                <b>普通股本</b> (已發行普通股數換算為億元，<b>排除特別股</b>，與 XQ 規格一致)
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">即時/異動時</td>
+            </tr>
+
+            <tr>
+              <td style="padding:10px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+                上市公司資產負債表<br><span style="font-size:0.75rem; color:var(--muted); font-weight:normal;">(金控/銀行/證券)</span>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">證交所 OpenAPI</td>
+              <td style="padding:10px 12px; border:1px solid var(--border);">
+                <div style="font-family:Consolas, monospace; font-size:0.78rem; color:#38bdf8;">
+                  GET https://openapi.twse.com.tw/v1/opendata/t187ap07_L_fh (金控)<br>
+                  GET https://openapi.twse.com.tw/v1/opendata/t187ap07_L_basi (銀行)<br>
+                  GET https://openapi.twse.com.tw/v1/opendata/t187ap07_L_bd (證券)
+                </div>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">
+                <b>每股參考淨值</b> (NAV)、實收資本額 (備援)、財報季別
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">每季法定財報日</td>
+            </tr>
+
+            <tr>
+              <td style="padding:10px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+                上市公司綜合損益表<br><span style="font-size:0.75rem; color:var(--muted); font-weight:normal;">(t187ap14_L)</span>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">證交所 OpenAPI</td>
+              <td style="padding:10px 12px; border:1px solid var(--border);">
+                <div style="font-family:Consolas, monospace; font-size:0.78rem;">
+                  <a class="source-link" href="https://openapi.twse.com.tw/v1/opendata/t187ap14_L" target="_blank" rel="noopener">
+                    GET https://openapi.twse.com.tw/v1/opendata/t187ap14_L ↗
+                  </a>
+                </div>
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">
+                <b>EPS (官報)</b> 基本每股盈餘 (元)、最新公告季別 (例: 2025Q2)
+              </td>
+              <td style="padding:10px 12px; border:1px solid var(--border); color:#cbd5e1;">每季法定財報日</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 區塊 3: 核心計算公式與換算邏輯 (支援 Toggle) -->
+      <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none; margin:24px 0 12px 0; background:#0f172a; padding:10px 16px; border:1px solid var(--border); border-radius:8px;" onclick="toggleSourceBlock(3)">
+        <h3 style="margin:0; font-size:1.02rem; color:#93c5fd; display:flex; align-items:center; gap:8px;">
+          <span id="icoSrc3" style="font-size:0.8rem; color:#93c5fd; display:inline-block; transition:transform 0.2s;">▼</span>
+          📐 投資表核心指標計算與單位換算公式
+        </h3>
+        <button class="btn-ghost" id="btnSrc3" style="padding:3px 10px; font-size:0.8rem; border-color:rgba(59,130,246,0.4);" onclick="event.stopPropagation(); toggleSourceBlock(3)">
+          👁️ 收合公式
+        </button>
+      </div>
+      <div id="srcBlock3" style="background:#0f172a; border:1px solid var(--border); border-radius:8px; padding:18px 20px; line-height:1.7; font-size:0.86rem; color:#cbd5e1;">
+        <ol style="margin:0; padding-left:20px;">
+          <li style="margin-bottom:10px;">
+            <b style="color:#93c5fd;">普通股本 (億元)</b>：
+            <code>已發行普通股數 × 10元面額 / 100,000,000 = 已發行普通股數 / 10,000,000</code>（換算為新台幣億元）。<br>
+            <span style="font-size:0.8rem; color:var(--muted);">
+              說明：資料取自 <code>t187ap03_L</code> 上市公司基本資料。<b>系統已主動排除特別股股本</b>，使股本與 EPS 換算完全符合普通股投資交易標準（例如 2881 富邦金普通股本精確為 1,400.74 億，排除 160 億特別股，與 XQ 完全一致）。
+            </span>
+          </li>
+          <li style="margin-bottom:10px;">
+            <b style="color:#93c5fd;">EPS (X月自結)</b>：
+            <code>累計自結 EPS = X月累計自結稅前損益 (千元) / (普通股本 (億元) × 10,000)</code><br>
+            <span style="font-size:0.8rem; color:var(--muted);">
+              說明：自結獲利單位為千元（×1,000），普通股本 1 億元 = 10,000,000 股普通股，因此 <code>千元 × 1,000 / 10,000,000 = 千元 / 10,000</code>。若該月該檔股票尚未公布月自結，則統一顯示為 <code>"-"</code>。
+            </span>
+          </li>
+          <li style="margin-bottom:10px;">
+            <b style="color:#93c5fd;">成交量 (張)</b>：
+            <code>STOCK_DAY_ALL 成交股數 / 1,000</code>（換算為日成交張數）。
+          </li>
+          <li style="margin-bottom:10px;">
+            <b style="color:#93c5fd;">每股淨值 (元)</b>：
+            優先採用資產負債表 <code>每股參考淨值</code>；若尚未公告時，則依據證交所公布之收盤價與 <code>PB (股價淨值比)</code> 反推計算：<code>股價 / PB</code>。
+          </li>
+          <li style="margin-bottom:10px;">
+            <b style="color:#93c5fd;">現金配息 (元)</b>：
+            優先採用 <code>t187ap45_L</code> 最新股利年度之現金股利合計（盈餘分配 + 法定公積 + 資本公積）；若無資料時，則依證交所公布之 <code>收盤價 × (殖利率 / 100)</code> 反推計算。
+          </li>
+          <li>
+            <b style="color:#93c5fd;">本益比 (PE) & 現金殖利率 (%)</b>：
+            直接採用臺灣證券交易所 (TWSE) 官方經盤後核算之最新數值 (BWIBBU_d)。
+          </li>
+        </ol>
+      </div>
+    </div>
+
+    <!-- 公告快易查視圖 (最後一個分頁) -->
+    <div id="viewEzsearch" class="table-wrap" style="display:none; padding:20px 24px; background:var(--panel);">
+      <!-- 頂部標題與工具按鈕 -->
+      <div style="border-bottom:1px solid var(--border); padding-bottom:16px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="margin:0 0 6px 0; font-size:1.25rem; color:#93c5fd; display:flex; align-items:center; gap:8px;">
+            📢 公開資訊觀測站 — 公告快易查 (自結重大訊息)
+          </h2>
+          <div style="font-size:0.86rem; color:var(--muted);">
+            即時查詢證交所公開資訊觀測站最新自結損益重大訊息公告，支援關鍵字即時篩選、原廠截圖對照與點擊開啟官方詳細公告全文。
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn-primary" onclick="loadEzsearchData(true)">🔄 重新查詢公告</button>
+          <button class="btn-ghost" onclick="toggleEzsearchScreenshot()">🖼️ <span id="lblToggleScreenshot">展開原始截圖</span></button>
+          <a class="source-link" href="https://mopsov.twse.com.tw/mops/web/ezsearch" target="_blank" rel="noopener">🌐 證交所快易查首頁 ↗</a>
+          <a id="lnkEzsearchApi" class="source-link" href="https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID=&PRO_ITEM=M99&SUBJECT=%E8%87%AA%E7%B5%90&SDATE=20261001&EDATE=115/10/23&lang=TW&AN=" target="_blank" rel="noopener">🔗 原始 API URL ↗</a>
+        </div>
+      </div>
+
+      <!-- 查詢參數與即時搜尋面板 -->
+      <div class="card" style="margin-bottom:20px; background:#0f172a;">
+        <div class="card-title" style="margin-bottom:10px;">
+          <span>🔍 證交所查詢參數設定</span>
+          <span style="font-size:0.8rem; font-weight:normal; color:var(--muted);">
+            市場/產業：上市 17 金融保險業 ｜ 公告項目：M99 其他重大事項
+          </span>
+        </div>
+        <div class="form-row" style="gap:14px; flex-wrap:wrap;">
+          <div>
+            <label style="font-size:0.82rem; color:var(--muted);">主旨關鍵字：</label>
+            <input type="text" id="inputEzSubject" value="自結" style="width:100px; padding:6px 10px; font-weight:600;" />
+          </div>
+          <div>
+            <label style="font-size:0.82rem; color:var(--muted);">資料起日：</label>
+            <input type="date" id="inputEzSdate" value="2026-10-01" onchange="loadEzsearchData(true)" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
+          </div>
+          <div>
+            <label style="font-size:0.82rem; color:var(--muted);">資料迄日：</label>
+            <input type="date" id="inputEzEdate" value="2026-10-23" onchange="loadEzsearchData(true)" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
+          </div>
+          <button class="btn-warn" onclick="loadEzsearchData(true)">執行查詢</button>
+          <div style="margin-left:auto;">
+            <input type="text" id="inputEzFilter" placeholder="🔍 快速過濾代號 / 名稱 / 主旨..." oninput="filterEzsearchTable(this.value)" style="width:220px; padding:6px 12px;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- 原始截圖展示區塊 (預設隱藏，支援 顯示/隱藏 Toggle) -->
+      <div id="ezsearchScreenshotBox" style="background:#0f172a; border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:14px 18px; margin-bottom:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; user-select:none; cursor:pointer;" onclick="toggleEzsearchScreenshot()">
+          <strong style="color:#60a5fa; font-size:0.92rem; display:flex; align-items:center; gap:8px;">
+            <span id="icoToggleScreenshot" style="font-size:0.8rem; color:#93c5fd; display:inline-block; transition:transform 0.2s;">▶</span>
+            📷 證交所公開資訊觀測站「公告快易查」查詢畫面截圖對照
+          </strong>
+          <div style="display:flex; gap:10px; align-items:center;" onclick="event.stopPropagation();">
+            <button class="btn-ghost" id="btnToggleScreenshotCard" onclick="toggleEzsearchScreenshot()" style="padding:4px 12px; font-size:0.8rem; border-color:rgba(59,130,246,0.4);" title="切換顯示或隱藏原始截圖">
+              👁️ 顯示截圖
+            </button>
+            <a href="/assets/ezsearch_screenshot.png" target="_blank" rel="noopener" class="source-link" style="font-size:0.8rem;">
+              🔍 開啟原圖 ↗
+            </a>
+          </div>
+        </div>
+        <div id="ezsearchImgWrap" style="text-align:center; overflow-x:auto; margin-top:12px; display:none;">
+          <img src="/assets/ezsearch_screenshot.png" alt="證交所公告快易查截圖" style="max-width:100%; height:auto; border-radius:6px; border:1px solid #334155; box-shadow:0 4px 14px rgba(0,0,0,0.6); cursor:pointer;" onclick="window.open(this.src)" title="點擊在新視窗檢視原始大圖" />
+        </div>
+      </div>
+
+      <!-- 即時讀取資料表格區塊 -->
+      <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div style="font-size:0.92rem; color:#f8fafc;">
+          📋 <b>即時讀取資料結果清單</b>
+          <span style="font-size:0.82rem; color:var(--muted); margin-left:8px;">
+            (共 <span id="ezsearchCount" style="color:#60a5fa; font-weight:700;">0</span> 筆公告 ｜ 顯示 <span id="ezsearchShownCount" style="color:#34d399; font-weight:700;">0</span> 筆)
+          </span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <div id="ezsearchTime" style="font-size:0.8rem; color:var(--muted); margin-right:4px;"></div>
+          <button class="btn-accent" onclick="exportEzsearchExcel()" style="padding:5px 12px; font-size:0.82rem;">📥 匯出公告 Excel</button>
+          <button class="btn-ghost" onclick="exportEzsearchCsv()" style="padding:5px 12px; font-size:0.82rem;">📄 匯出公告 CSV</button>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <div class="table-scroll-wrap" style="max-height: 520px;">
+          <table id="tblEzsearch">
+            <thead>
+              <tr style="background:#1e293b; color:#93c5fd; text-align:left;">
+                <th style="padding:10px 12px; border:1px solid var(--border); width:135px;">公告日期時間</th>
+                <th style="padding:10px 12px; border:1px solid var(--border); width:125px;">市場產業別</th>
+                <th style="padding:10px 12px; border:1px solid var(--border); width:85px;">公司代號</th>
+                <th style="padding:10px 12px; border:1px solid var(--border); width:95px;">公司簡稱</th>
+                <th style="padding:10px 12px; border:1px solid var(--border); width:130px;">公告項目</th>
+                <th style="padding:10px 12px; border:1px solid var(--border);">公告主旨</th>
+                <th style="padding:10px 12px; border:1px solid var(--border); width:85px; text-align:center;">詳細資料</th>
+              </tr>
+            </thead>
+            <tbody id="ezsearchTbody">
+              <tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">正在讀取公告資料中...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let state = {
+      defaultY1: 114,
+      defaultY2: 115,
+      ym: "11509",
+      listYear: 115,
+      listMonth: 9,
+      stocks: [],           // array of financial stocks from list
+      selected: new Set(),  // empty by default; user selects stocks to update
+      companies: {},        // co_id -> company comparison data
+      activeTab: "INVEST",  // "INVEST", "SUMMARY", or co_id
+      sourceCoId: "2881",   // currently previewed co_id for data source URL & payload
+      sortCol: "co_id",     // current sort column
+      sortAsc: true,        // true = ascending (▲), false = descending (▼)
+      isUpdating: false,
+      stopRequested: false,
+
+      // 金融股投資表狀態
+      investMetrics: [],
+      investSortCol: "co_id",
+      investSortAsc: true,
+      investFilterText: "",
+      investLoading: false,
+
+      // 自結公告快易查狀態
+      ezsearchItems: [],
+      ezsearchLoaded: false
+    };
+
+    function switchCard1Tab(tabName) {
+      const tabs = ["config", "srcList", "srcComp"];
+      for (const t of tabs) {
+        const btn = document.getElementById("btnCardTab_" + t);
+        const pane = document.getElementById("card1Pane_" + t);
+        if (btn) btn.className = (t === tabName) ? "card-tab-btn active" : "card-tab-btn";
+        if (pane) pane.style.display = (t === tabName) ? "block" : "none";
+      }
+      const resetBtn = document.getElementById("btnResetYears");
+      if (resetBtn) resetBtn.style.display = (tabName === "config") ? "inline-flex" : "none";
+    }
+
+    function fmtNum(v) {
+      if (v === null || v === undefined || v === "" || Number.isNaN(v)) return "—";
+      const n = Number(v);
+      const s = n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+      return n < 0 ? `<span class="neg">${s}</span>` : s;
+    }
+
+    function fmtYoY(v) {
+      if (v === null || v === undefined || Number.isNaN(v)) return "—";
+      const pct = (Number(v) * 100).toFixed(2) + "%";
+      if (v > 0) return `<span class="pos">+${pct}</span>`;
+      if (v < 0) return `<span class="neg">${pct}</span>`;
+      return pct;
+    }
+
+    function setStatus(msg, done = 0, total = 0) {
+      document.getElementById("statusText").textContent = msg;
+      const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+      document.getElementById("progressBar").style.width = pct + "%";
+      document.getElementById("progressCount").textContent = total > 0 ? `${done} / ${total} (${pct}%)` : "";
+    }
+
+    async function initApp() {
+      try {
+        setStatus("正在連接 MOPS 取得最新月自結損益清單...");
+        const resp = await fetch("/api/init");
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || "初始化失敗");
+
+        state.defaultY1 = data.default_y1;
+        state.defaultY2 = data.default_y2;
+        document.getElementById("inputYear1").value = state.defaultY1;
+        document.getElementById("inputYear2").value = state.defaultY2;
+        document.getElementById("inputYm").value = data.latest_ym;
+
+        applyListData(data.list_data);
+        setStatus(`已載入 ${state.listYear}年${state.listMonth}月 金融股自結清單（共 ${state.stocks.length} 檔）。`);
+      } catch (err) {
+        setStatus("❌ 初始化錯誤: " + err.message);
+      }
+      // 載入金融股投資表並切換為第一分頁
+      await loadInvestMetrics(false);
+      switchTab("INVEST");
+    }
+
+    function applyListData(listData) {
+      state.ym = listData.ym;
+      state.listYear = listData.year;
+      state.listMonth = listData.month;
+      state.stocks = listData.stocks || [];
+      document.getElementById("ymBadge").textContent = `最新清單：${state.listYear}年${state.listMonth}月 (共 ${state.stocks.length} 檔金融股)`;
+      document.getElementById("totalFinCount").textContent = state.stocks.length;
+
+      // Populate sourceCoSelect dropdown
+      const selEl = document.getElementById("sourceCoSelect");
+      if (selEl && state.stocks.length > 0) {
+        if (!state.stocks.some(s => s.co_id === state.sourceCoId)) {
+          state.sourceCoId = state.stocks.some(s => s.co_id === "2881") ? "2881" : state.stocks[0].co_id;
+        }
+        selEl.innerHTML = state.stocks.map(s =>
+          `<option value="${s.co_id}" ${s.co_id === state.sourceCoId ? 'selected' : ''}>${s.label}</option>`
+        ).join("");
+      }
+
+      // Filter selected set to valid stocks
+      const validIds = new Set(state.stocks.map(s => s.co_id));
+      for (const id of Array.from(state.selected)) {
+        if (!validIds.has(id)) state.selected.delete(id);
+      }
+      renderHeaderLabels();
+      renderChips();
+      renderSummaryTable();
+      renderTabs();
+    }
+
+    function onSourceCoChange(coId) {
+      state.sourceCoId = coId;
+      const selEl = document.getElementById("sourceCoSelect");
+      if (selEl && selEl.value !== coId) selEl.value = coId;
+      renderSourceInfo();
+    }
+
+    function renderSourceInfo() {
+      const { y1, y2 } = getSelectedYears();
+      const ym = state.ym || document.getElementById("inputYm").value.trim() || "11509";
+      const coId = (state.activeTab !== "SUMMARY" ? state.activeTab : state.sourceCoId) || "2881";
+
+      const listPayloadObj = {
+        apiName: "ajax_t138sb01",
+        parameters: { CK2: "1", YM1: String(ym), CK1: "1", encodeURIComponent: 1, firstin: 1, step: 1, first: 1 }
+      };
+      const compQ1Y2Obj = {
+        apiName: "ajax_t138sb02_q1",
+        parameters: { co_id: String(coId), year: String(y2), encodeURIComponent: 1, step: 1, firstin: 1, off: 1 }
+      };
+      const compDataY2Obj = {
+        apiName: "ajax_t138sb02",
+        parameters: { encodeURIComponent: 1, step: 1, firstin: 1, off: 1, CK2: "1", BK1: "2", TYPEK: "sii", YEAR: String(y2), COMP: String(coId) }
+      };
+
+      const listOpenUrl = `/api/open_mops?type=list&ym=${encodeURIComponent(ym)}&market=1`;
+      const compY1OpenUrl = `/api/open_mops?type=company&co_id=${encodeURIComponent(coId)}&year=${encodeURIComponent(y1)}`;
+      const compY2OpenUrl = `/api/open_mops?type=company&co_id=${encodeURIComponent(coId)}&year=${encodeURIComponent(y2)}`;
+
+      document.getElementById("lblListYmBtn").textContent = ym;
+      document.getElementById("lnkListDirect").href = listOpenUrl;
+      document.getElementById("lnkListPayload").href = listOpenUrl;
+      document.getElementById("txtListPayload").textContent = JSON.stringify(listPayloadObj);
+
+      document.getElementById("lblCompY1Btn").textContent = `${coId} (${y1})`;
+      document.getElementById("lblCompY2Btn").textContent = `${coId} (${y2})`;
+      document.getElementById("lnkCompY1Direct").href = compY1OpenUrl;
+      document.getElementById("lnkCompY2Direct").href = compY2OpenUrl;
+      document.getElementById("lnkCompPayload").href = compY2OpenUrl;
+      document.getElementById("txtCompQ1Payload").textContent = JSON.stringify(compQ1Y2Obj);
+      document.getElementById("txtCompDataPayload").textContent = JSON.stringify(compDataY2Obj);
+    }
+
+    function isForceMode() {
+      const checked = document.querySelector('input[name="fetchMode"]:checked');
+      return checked && checked.value === "force";
+    }
+
+    function onFetchModeChange() {
+      const force = isForceMode();
+      document.getElementById("lblModeDb").className = force ? "mode-option" : "mode-option active-db";
+      document.getElementById("lblModeForce").className = force ? "mode-option active-force" : "mode-option";
+      setStatus(force
+        ? "🔄 已切換為「強制重抓」模式：每次執行皆重新向 MOPS 抓取並同步更新至 SQLite3 資料庫。"
+        : "🗄️ 已切換為「資料庫優先」模式：若 SQLite3 資料庫已有資料則直接採用，無資料時才向 MOPS 抓取並寫入資料庫。"
+      );
+    }
+
+    async function loadList() {
+      const ym = document.getElementById("inputYm").value.trim();
+      if (!ym) return;
+      const force = isForceMode();
+      try {
+        document.getElementById("btnLoadList").disabled = true;
+        setStatus(`正在讀取 ${ym} 月自結損益清單 (${force ? '強制重抓' : '資料庫優先'})...`);
+        const resp = await fetch(`/api/list?ym=${encodeURIComponent(ym)}&market=1&force=${force ? 1 : 0}`);
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || "讀取清單失敗");
+        applyListData(data.list_data);
+        const srcText = data.list_data.source === "db" ? "🗄️ 來自 SQLite 資料庫" : "🌐 已從 MOPS 抓取並寫入資料庫";
+        setStatus(`已載入 ${ym} 清單（${srcText}），共擷取 ${state.stocks.length} 檔金融股。`);
+      } catch (err) {
+        setStatus("❌ 讀取清單錯誤: " + err.message);
+      } finally {
+        document.getElementById("btnLoadList").disabled = false;
+      }
+    }
+
+    function getSelectedYears() {
+      const y1 = parseInt(document.getElementById("inputYear1").value, 10) || state.defaultY1;
+      const y2 = parseInt(document.getElementById("inputYear2").value, 10) || state.defaultY2;
+      return { y1, y2 };
+    }
+
+    function resetDefaultYears() {
+      document.getElementById("inputYear1").value = state.defaultY1;
+      document.getElementById("inputYear2").value = state.defaultY2;
+      onYearChange();
+    }
+
+    function onYearChange() {
+      // Clear current company comparison table when years change so user knows to update
+      state.companies = {};
+      renderHeaderLabels();
+      renderChips();
+      renderSummaryTable();
+      renderTabs();
+      const { y1, y2 } = getSelectedYears();
+      setStatus(`比較年度已切換為 ${y1}年度 vs ${y2}年度，請點擊「更新選取個股」或「一鍵更新全部 (ALL)」抓取對應年度資料。`);
+    }
+
+    function sortIconHtml(col) {
+      if (state.sortCol !== col) return `<span class="sort-icon">⇅</span>`;
+      return `<span class="sort-icon">${state.sortAsc ? "▲" : "▼"}</span>`;
+    }
+
+    function sortTable(col) {
+      const textCols = new Set(["co_id", "report_type"]);
+      if (state.sortCol === col) {
+        state.sortAsc = !state.sortAsc;
+      } else {
+        state.sortCol = col;
+        // 數值與狀態欄位預設第一次點擊為「由高到低 (▼)」，文字欄位預設為「由小到大 (▲)」
+        state.sortAsc = textCols.has(col);
+      }
+      renderHeaderLabels();
+      renderSummaryTable();
+    }
+
+    function getSortValue(s, col) {
+      const comp = state.companies[s.co_id];
+      const latest = comp ? comp.latest_row : null;
+      switch (col) {
+        case "co_id": return s.co_id;
+        case "report_type": return s.report_type || "";
+        case "list_month_pretax": return s.list_month_pretax;
+        case "list_cum_pretax": return s.list_cum_pretax;
+        case "y1_month_pretax": return latest ? latest.y1_month_pretax : null;
+        case "y1_cum_pretax": return latest ? latest.y1_cum_pretax : null;
+        case "y2_month_pretax": return latest ? latest.y2_month_pretax : null;
+        case "y2_cum_pretax": return latest ? latest.y2_cum_pretax : null;
+        case "cum_yoy": return latest ? latest.cum_yoy : null;
+        case "status": return comp ? 1 : 0;
+        default: return s.co_id;
+      }
+    }
+
+    function getSortedStocks() {
+      const arr = [...state.stocks];
+      const col = state.sortCol;
+      const dir = state.sortAsc ? 1 : -1;
+      arr.sort((a, b) => {
+        const va = getSortValue(a, col);
+        const vb = getSortValue(b, col);
+        const aNull = (va === null || va === undefined || va === "" || Number.isNaN(va));
+        const bNull = (vb === null || vb === undefined || vb === "" || Number.isNaN(vb));
+        // 無資料 (—) 永遠排在最下方
+        if (aNull && bNull) return a.co_id.localeCompare(b.co_id);
+        if (aNull) return 1;
+        if (bNull) return -1;
+        if (typeof va === "string" && typeof vb === "string") {
+          const cmp = va.localeCompare(vb, "zh-Hant");
+          return cmp !== 0 ? cmp * dir : a.co_id.localeCompare(b.co_id);
+        }
+        if (va === vb) return a.co_id.localeCompare(b.co_id);
+        return (va < vb ? -1 : 1) * dir;
+      });
+      return arr;
+    }
+
+    function renderHeaderLabels() {
+      const { y1, y2 } = getSelectedYears();
+      const ymLbl = `${state.listYear}/${String(state.listMonth).padStart(2, "0")}`;
+      const mLbl = `(${state.listMonth}月)`;
+
+      const headerMap = [
+        ["thSort_co_id", "co_id", `金融股 (代號 名稱)`],
+        ["thSort_report_type", "report_type", `報表類型`],
+        ["thListMon", "list_month_pretax", `${ymLbl}<br>本月稅前損益(清單)`],
+        ["thListCum", "list_cum_pretax", `${ymLbl}<br>本年累計稅前損益(清單)`],
+        ["thY1Mon", "y1_month_pretax", `${y1}年度<br>本月稅前損益${mLbl}`],
+        ["thY1Cum", "y1_cum_pretax", `${y1}年度<br>本年累計稅前損益${mLbl}`],
+        ["thY2Mon", "y2_month_pretax", `${y2}年度<br>本月稅前損益${mLbl}`],
+        ["thY2Cum", "y2_cum_pretax", `${y2}年度<br>本年累計稅前損益${mLbl}`],
+        ["thSort_cum_yoy", "cum_yoy", `累計稅前<br>YoY`],
+        ["thSort_status", "status", `狀態 / 操作`]
+      ];
+      for (const [id, col, labelHtml] of headerMap) {
+        const el = document.getElementById(id);
+        if (!el) continue;
+        el.className = state.sortCol === col ? "sortable sorted" : "sortable";
+        el.innerHTML = `${labelHtml}${sortIconHtml(col)}`;
+      }
+
+      document.getElementById("thCompY1Mon").innerHTML = `${y1}年度<br>本月稅前損益`;
+      document.getElementById("thCompY1Cum").innerHTML = `${y1}年度<br>本年累計稅前損益`;
+      document.getElementById("thCompY2Mon").innerHTML = `${y2}年度<br>本月稅前損益`;
+      document.getElementById("thCompY2Cum").innerHTML = `${y2}年度<br>本年累計稅前損益`;
+      renderSourceInfo();
+    }
+
+    function renderChips() {
+      const box = document.getElementById("stockChips");
+      box.innerHTML = state.stocks.map(s => {
+        const isSel = state.selected.has(s.co_id);
+        const isUpd = Boolean(state.companies[s.co_id]);
+        return `<div class="chip ${isSel ? 'selected' : ''} ${isUpd ? 'updated' : ''}" onclick="toggleStock('${s.co_id}')">
+          <input type="checkbox" ${isSel ? 'checked' : ''} onclick="event.stopPropagation(); toggleStock('${s.co_id}')" />
+          <span>${s.co_id} ${s.name}</span>
+        </div>`;
+      }).join("");
+      document.getElementById("selectedCount").textContent = state.selected.size;
+      document.getElementById("btnSelectedNum").textContent = state.selected.size;
+      document.getElementById("chkAllTable").checked = state.stocks.length > 0 && state.selected.size === state.stocks.length;
+    }
+
+    function toggleStock(coId) {
+      if (state.selected.has(coId)) state.selected.delete(coId);
+      else state.selected.add(coId);
+      onSourceCoChange(coId);
+      renderChips();
+      renderSummaryTable();
+    }
+
+    function selectAll(flag) {
+      if (flag) state.stocks.forEach(s => state.selected.add(s.co_id));
+      else state.selected.clear();
+      renderChips();
+      renderSummaryTable();
+    }
+
+    function selectPreset(codes) {
+      state.selected.clear();
+      const valid = new Set(state.stocks.map(s => s.co_id));
+      codes.forEach(c => { if (valid.has(c)) state.selected.add(c); });
+      renderChips();
+      renderSummaryTable();
+    }
+
+    function selectTopN(n) {
+      state.selected.clear();
+      state.stocks.slice(0, n).forEach(s => state.selected.add(s.co_id));
+      renderChips();
+      renderSummaryTable();
+    }
+
+    function renderSummaryTable(loadingCoId = null) {
+      const tbody = document.getElementById("summaryTbody");
+      if (!state.stocks.length) {
+        tbody.innerHTML = `<tr><td colspan="11" class="center" style="padding:28px; color:var(--muted);">查無金融股資料</td></tr>`;
+        return;
+      }
+      const { y1, y2 } = getSelectedYears();
+      const sortedList = getSortedStocks();
+      tbody.innerHTML = sortedList.map(s => {
+        const isSel = state.selected.has(s.co_id);
+        const comp = state.companies[s.co_id];
+        const latest = comp ? comp.latest_row : null;
+        const isLoading = loadingCoId === s.co_id;
+
+        const nameCell = comp
+          ? `<a class="stock-link" onclick="switchTab('${s.co_id}')" title="點擊檢視 1~12 月完整對齊表">${s.label} 🔍</a>`
+          : `<span style="cursor:pointer;" onclick="onSourceCoChange('${s.co_id}')" title="點擊切換上方 Payload 預覽個股">${s.label}</span>`;
+
+        const mopsLinks = `
+          <a class="source-link" style="padding:1px 5px; font-size:0.7rem;" href="/api/open_mops?type=company&co_id=${s.co_id}&year=${y1}" target="_blank" rel="noopener" title="點擊直接開啟 MOPS ${s.label} ${y1}年度自結損益表">🔗${y1}</a>
+          <a class="source-link" style="padding:1px 5px; font-size:0.7rem;" href="/api/open_mops?type=company&co_id=${s.co_id}&year=${y2}" target="_blank" rel="noopener" title="點擊直接開啟 MOPS ${s.label} ${y2}年度自結損益表">🔗${y2}</a>
+        `;
+
+        let statusHtml = `<button class="btn-ghost" style="padding:3px 8px; font-size:0.76rem;" onclick="updateSingleStock('${s.co_id}')">單獨更新</button> ${mopsLinks}`;
+        if (isLoading) {
+          statusHtml = `<span class="tag tag-wait">⏳ 讀取中...</span> ${mopsLinks}`;
+        } else if (comp) {
+          const isDb = comp.source === "db";
+          const badgeCls = isDb ? "tag tag-db" : "tag tag-ok";
+          const badgeTxt = isDb ? "🗄️ 資料庫 (看明細)" : "🌐 已抓更新DB (看明細)";
+          statusHtml = `<span class="${badgeCls}" style="cursor:pointer;" title="更新時間: ${comp.updated_at || ''}" onclick="switchTab('${s.co_id}')">${badgeTxt}</span> ${mopsLinks}`;
+        }
+
+        return `<tr class="${comp ? 'row-updated' : ''} ${isLoading ? 'row-loading' : ''}" onmouseenter="onSourceCoChange('${s.co_id}')">
+          <td class="center"><input type="checkbox" ${isSel ? 'checked' : ''} onchange="toggleStock('${s.co_id}')" /></td>
+          <td>${nameCell}</td>
+          <td class="center"><span class="tag">${s.report_type}</span></td>
+          <td class="num">${fmtNum(s.list_month_pretax)}</td>
+          <td class="num">${fmtNum(s.list_cum_pretax)}</td>
+          <td class="num">${latest ? fmtNum(latest.y1_month_pretax) : '—'}</td>
+          <td class="num">${latest ? fmtNum(latest.y1_cum_pretax) : '—'}</td>
+          <td class="num">${latest ? fmtNum(latest.y2_month_pretax) : '—'}</td>
+          <td class="num">${latest ? fmtNum(latest.y2_cum_pretax) : '—'}</td>
+          <td class="num">${latest ? fmtYoY(latest.cum_yoy) : '—'}</td>
+          <td class="center">${statusHtml}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function renderCompanyTabs() {
+      const box = document.getElementById("companyTabsBar");
+      if (!box) return;
+      const updatedStocks = state.stocks.filter(s => Boolean(state.companies[s.co_id]));
+      if (updatedStocks.length === 0) {
+        box.style.display = "none";
+        box.innerHTML = "";
+        return;
+      }
+      box.style.display = "flex";
+
+      let html = `<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; width:100%;">`;
+
+      // 1. 全部自結清單彙總表按鈕
+      const isSummaryActive = (state.activeTab === 'SUMMARY');
+      html += `<button class="tab-btn ${isSummaryActive ? 'active' : ''}" onclick="switchTab('SUMMARY')" style="${isSummaryActive ? '' : 'border-color:rgba(59,130,246,0.5); color:#93c5fd;'}">
+        📋 自結清單彙總表
+      </button>`;
+
+      // 2. 各個已更新的個股分頁按鈕 (原紅框內的個股分頁)
+      for (const s of updatedStocks) {
+        const isStockActive = (state.activeTab === s.co_id);
+        html += `<button class="tab-btn ${isStockActive ? 'active' : ''}" onclick="switchTab('${s.co_id}')">
+          <span>📈 ${s.label}</span>
+          <span class="tab-close" title="移除此個股分頁" onclick="event.stopPropagation(); removeCompanyTab('${s.co_id}')">×</span>
+        </button>`;
+      }
+
+      // 3. 清除所有個股分頁按鈕
+      html += `<button class="btn-ghost" style="margin-left:auto; color:#f87171; border-color:rgba(248,113,113,0.35); padding:4px 10px; font-size:0.8rem;" onclick="clearAllCompanyTabs()" title="關閉並移除畫面上所有個股分頁（不影響 SQLite 資料庫）">
+        🗑️ 清除所有個股分頁
+      </button>`;
+
+      html += `</div>`;
+      box.innerHTML = html;
+    }
+
+    function renderTabs() {
+      const bar = document.getElementById("tabBar");
+      const isSummaryOrCompany = (state.activeTab === 'SUMMARY' || Boolean(state.companies[state.activeTab]));
+
+      let html = `<button class="tab-btn ${state.activeTab === 'INVEST' ? 'active' : ''}" id="tabBtn_INVEST" onclick="switchTab('INVEST')">
+        📊 金融股投資表
+      </button>`;
+      const ymDisplay = (state.listYear && state.listMonth) 
+        ? `${state.listYear}年${state.listMonth}月` 
+        : (state.ym ? `${state.ym.slice(0, 3)}年${parseInt(state.ym.slice(3))}月` : "115年9月");
+      html += `<button class="tab-btn ${isSummaryOrCompany ? 'active' : ''}" id="tabBtn_SUMMARY" onclick="switchTab('SUMMARY')">
+        📋 ${ymDisplay} 自結清單
+      </button>`;
+      html += `<button class="tab-btn ${state.activeTab === 'EZSEARCH' ? 'active' : ''}" id="tabBtn_EZSEARCH" onclick="switchTab('EZSEARCH')">
+        📢 自結公告快易查
+      </button>`;
+      html += `<button class="tab-btn ${state.activeTab === 'SOURCES' ? 'active' : ''}" id="tabBtn_SOURCES" onclick="switchTab('SOURCES')">
+        📚 資料來源說明
+      </button>`;
+      bar.innerHTML = html;
+
+      renderCompanyTabs();
+    }
+
+    function removeCompanyTab(coId) {
+      delete state.companies[coId];
+      if (state.activeTab === coId) {
+        state.activeTab = "SUMMARY";
+      }
+      renderChips();
+      renderSummaryTable(null);
+      switchTab(state.activeTab);
+    }
+
+    function clearAllCompanyTabs() {
+      state.companies = {};
+      state.activeTab = "SUMMARY";
+      renderChips();
+      renderSummaryTable(null);
+      switchTab("SUMMARY");
+      setStatus("已清除畫面上所有個股分頁（SQLite 資料庫內資料仍完整保留）。");
+    }
+
+    function renderCompanyView(tabId) {
+      const comp = state.companies[tabId];
+      if (!comp) return;
+      const srcBadge = comp.source === "db" ? "🗄️ 來源：SQLite 資料庫" : "🌐 來源：MOPS 最新抓取 (已寫入 SQLite)";
+      document.getElementById("compTitle").textContent = `${comp.label} — 公告自結損益表 (${comp.y1}年度 vs ${comp.y2}年度)`;
+      document.getElementById("compSubtitle").textContent = `依照月份（1月至12月）基準對齊 ｜ 單位：新台幣仟元 ｜ ${srcBadge} (${comp.updated_at || ''})`;
+
+      const y1Url = `/api/open_mops?type=company&co_id=${encodeURIComponent(comp.co_id)}&year=${encodeURIComponent(comp.y1)}`;
+      const y2Url = `/api/open_mops?type=company&co_id=${encodeURIComponent(comp.co_id)}&year=${encodeURIComponent(comp.y2)}`;
+      const pY1 = JSON.stringify({ apiName: "ajax_t138sb02", parameters: { encodeURIComponent: 1, step: 1, firstin: 1, off: 1, CK2: "1", BK1: "2", TYPEK: "sii", YEAR: String(comp.y1), COMP: String(comp.co_id) } });
+      const pY2 = JSON.stringify({ apiName: "ajax_t138sb02", parameters: { encodeURIComponent: 1, step: 1, firstin: 1, off: 1, CK2: "1", BK1: "2", TYPEK: "sii", YEAR: String(comp.y2), COMP: String(comp.co_id) } });
+      document.getElementById("compSourceBox").innerHTML = `
+        <div class="payload-line" style="display:flex; flex-direction:column; gap:4px;">
+          <div>
+            <a class="source-link" href="${y1Url}" target="_blank" rel="noopener">🔗 點擊開啟 MOPS ${comp.label} (${comp.y1}年度) 原始報表 ↗</a>
+            <span style="margin-left:6px;"><b>URL:</b> https://mops.twse.com.tw/mops/api/redirectToOld ｜ <b>Payload:</b> <a href="${y1Url}" target="_blank" rel="noopener">${pY1}</a></span>
+          </div>
+          <div>
+            <a class="source-link" href="${y2Url}" target="_blank" rel="noopener">🔗 點擊開啟 MOPS ${comp.label} (${comp.y2}年度) 原始報表 ↗</a>
+            <span style="margin-left:6px;"><b>URL:</b> https://mops.twse.com.tw/mops/api/redirectToOld ｜ <b>Payload:</b> <a href="${y2Url}" target="_blank" rel="noopener">${pY2}</a></span>
+          </div>
+        </div>`;
+
+      const tbody = document.getElementById("companyTbody");
+      tbody.innerHTML = comp.rows.map(r => {
+        const isRefMonth = r.month === state.listMonth;
+        return `<tr style="${isRefMonth ? 'background:rgba(59,130,246,0.12); font-weight:600;' : ''}">
+          <td class="center">${r.month_label} ${isRefMonth ? '⭐' : ''}</td>
+          <td class="num">${fmtNum(r.y1_month_pretax)}</td>
+          <td class="num">${fmtNum(r.y1_cum_pretax)}</td>
+          <td class="num">${fmtNum(r.y2_month_pretax)}</td>
+          <td class="num">${fmtNum(r.y2_cum_pretax)}</td>
+          <td class="num">${fmtYoY(r.month_yoy)}</td>
+          <td class="num">${fmtYoY(r.cum_yoy)}</td>
+        </tr>`;
+      }).join("");
+    }
+
+    function switchTab(tabId) {
+      state.activeTab = tabId;
+      renderTabs();
+      renderSourceInfo();
+
+      const viewSummary = document.getElementById("viewSummary");
+      const summaryTableWrap = document.getElementById("summaryTableWrap");
+      const viewInvest = document.getElementById("viewInvest");
+      const viewCompany = document.getElementById("viewCompany");
+      const viewSources = document.getElementById("viewSources");
+      const viewEzsearch = document.getElementById("viewEzsearch");
+
+      const isCompanyTab = Boolean(state.companies[tabId]);
+
+      if (tabId === "SUMMARY" || isCompanyTab) {
+        if (viewSummary) viewSummary.style.display = "block";
+        if (viewInvest) viewInvest.style.display = "none";
+        if (viewSources) viewSources.style.display = "none";
+        if (viewEzsearch) viewEzsearch.style.display = "none";
+
+        if (isCompanyTab) {
+          if (summaryTableWrap) summaryTableWrap.style.display = "none";
+          if (viewCompany) viewCompany.style.display = "block";
+          onSourceCoChange(tabId);
+          renderCompanyView(tabId);
+        } else {
+          if (summaryTableWrap) summaryTableWrap.style.display = "block";
+          if (viewCompany) viewCompany.style.display = "none";
+        }
+      } else if (tabId === "INVEST") {
+        if (viewSummary) viewSummary.style.display = "none";
+        if (viewInvest) viewInvest.style.display = "block";
+        if (viewCompany) viewCompany.style.display = "none";
+        if (viewSources) viewSources.style.display = "none";
+        if (viewEzsearch) viewEzsearch.style.display = "none";
+        if (!state.investMetrics || state.investMetrics.length === 0) {
+          loadInvestMetrics(false);
+        } else {
+          renderInvestTable();
+        }
+      } else if (tabId === "SOURCES") {
+        if (viewSummary) viewSummary.style.display = "none";
+        if (viewInvest) viewInvest.style.display = "none";
+        if (viewCompany) viewCompany.style.display = "none";
+        if (viewSources) viewSources.style.display = "block";
+        if (viewEzsearch) viewEzsearch.style.display = "none";
+      } else if (tabId === "EZSEARCH") {
+        if (viewSummary) viewSummary.style.display = "none";
+        if (viewInvest) viewInvest.style.display = "none";
+        if (viewCompany) viewCompany.style.display = "none";
+        if (viewSources) viewSources.style.display = "none";
+        if (viewEzsearch) viewEzsearch.style.display = "block";
+        if (!state.ezsearchLoaded) {
+          loadEzsearchData();
+        }
+      }
+    }
+
+    async function updateSingleStock(coId) {
+      state.selected.add(coId);
+      renderChips();
+      await runBatchUpdate([coId]);
+    }
+
+    async function updateAllStocks() {
+      selectAll(true);
+      await updateSelectedStocks(true);
+    }
+
+    async function updateSelectedStocks() {
+      const targetIds = state.stocks.filter(s => state.selected.has(s.co_id)).map(s => s.co_id);
+      if (targetIds.length === 0) {
+        alert("請先勾選至少一檔金融股，或點擊「一鍵更新全部 (ALL)」！");
+        return;
+      }
+      await runBatchUpdate(targetIds);
+    }
+
+    function stopUpdating() {
+      state.stopRequested = true;
+      setStatus("⏹ 正在停止更新（保留已抓取之個股資料）...");
+    }
+
+    async function runBatchUpdate(coIds) {
+      if (state.isUpdating) return;
+      state.isUpdating = true;
+      state.stopRequested = false;
+
+      document.getElementById("btnUpdateSelected").disabled = true;
+      document.getElementById("btnUpdateAll").disabled = true;
+      document.getElementById("btnStop").style.display = "inline-flex";
+
+      const { y1, y2 } = getSelectedYears();
+      const force = isForceMode() ? 1 : 0;
+      const modeLabel = force ? "強制重抓" : "資料庫優先";
+      const total = coIds.length;
+      let done = 0;
+      let dbHits = 0;
+      let mopsFetches = 0;
+
+      try {
+        for (const coId of coIds) {
+          if (state.stopRequested) break;
+          const stockObj = state.stocks.find(s => s.co_id === coId);
+          const label = stockObj ? stockObj.label : coId;
+          setStatus(`[${modeLabel}] 正在處理 ${label} 的 ${y1}/${y2} 年度公告自結損益表...`, done, total);
+          renderSummaryTable(coId);
+
+          const url = `/api/company?co_id=${encodeURIComponent(coId)}&y1=${y1}&y2=${y2}&month=${state.listMonth}&force=${force}`;
+          const resp = await fetch(url);
+          const data = await resp.json();
+          if (data.ok && data.company) {
+            state.companies[coId] = data.company;
+            if (data.company.source === "db") dbHits++;
+            else mopsFetches++;
+          }
+          done++;
+          renderChips();
+          renderSummaryTable(null);
+          renderTabs();
+          setStatus(`已完成 ${label} (${done}/${total}，資料庫讀取: ${dbHits} 檔，MOPS 重抓寫入: ${mopsFetches} 檔)`, done, total);
+        }
+
+        if (state.stopRequested) {
+          setStatus(`⏹ 已手動停止。共完成 ${done} / ${total} 檔個股（資料庫讀取: ${dbHits} 檔，MOPS 抓取寫入: ${mopsFetches} 檔）。`, done, total);
+        } else {
+          setStatus(`✅ 更新完成！共處理 ${done} 檔金融股（🗄️ 資料庫讀取: ${dbHits} 檔，🌐 MOPS 抓取並寫入DB: ${mopsFetches} 檔）。`, done, total);
+        }
+      } catch (err) {
+        setStatus("❌ 更新過程發生錯誤: " + err.message, done, total);
+      } finally {
+        state.isUpdating = false;
+        document.getElementById("btnUpdateSelected").disabled = false;
+        document.getElementById("btnUpdateAll").disabled = false;
+        document.getElementById("btnStop").style.display = "none";
+        renderSummaryTable(null);
+      }
+    }
+
+    async function exportExcel() {
+      const { y1, y2 } = getSelectedYears();
+      const btn = document.getElementById("btnExportExcel");
+      btn.disabled = true;
+      try {
+        const resp = await fetch("/api/export_excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ym: state.ym,
+            y1,
+            y2,
+            stocks: getSortedStocks(),
+            companies: state.companies
+          })
+        });
+        if (!resp.ok) throw new Error("匯出 Excel 失敗");
+        const blob = await resp.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `MOPS_金融股自結損益_${state.ym}_${y1}vs${y2}.xlsx`;
+        a.click();
+      } catch (err) {
+        alert("匯出失敗: " + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function exportCsv() {
+      const { y1, y2 } = getSelectedYears();
+      const ymLbl = `${state.listYear}/${String(state.listMonth).padStart(2, "0")}`;
+      const headers = [
+        "金融股", "報表類型",
+        `${ymLbl} 本月稅前損益(清單)`, `${ymLbl} 本年累計稅前損益(清單)`,
+        `${y1}年度 本月稅前損益`, `${y1}年度 本年累計稅前損益`,
+        `${y2}年度 本月稅前損益`, `${y2}年度 本年累計稅前損益`,
+        "累計稅前 YoY"
+      ];
+      const rows = [headers.join(",")];
+      for (const s of getSortedStocks()) {
+        const comp = state.companies[s.co_id];
+        const latest = comp ? comp.latest_row : null;
+        const yoyStr = (latest && latest.cum_yoy !== null && latest.cum_yoy !== undefined)
+          ? (latest.cum_yoy * 100).toFixed(2) + "%"
+          : "";
+        rows.push([
+          `"${s.label}"`,
+          `"${s.report_type}"`,
+          s.list_month_pretax ?? "",
+          s.list_cum_pretax ?? "",
+          latest?.y1_month_pretax ?? "",
+          latest?.y1_cum_pretax ?? "",
+          latest?.y2_month_pretax ?? "",
+          latest?.y2_cum_pretax ?? "",
+          yoyStr
+        ].join(","));
+      }
+      const blob = new Blob(["\uFEFF" + rows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `MOPS_金融股自結清單_${state.ym}_${y1}vs${y2}.csv`;
+      a.click();
+    }
+
+    // ================================================================ 金融股投資表功能
+    async function loadInvestMetrics(force = false) {
+      const tbody = document.getElementById("investTbody");
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="12" class="center" style="padding:32px; color:var(--muted);">
+          ⏳ 正在${force ? '重新向 TWSE 抓取最新行情與財務指標' : '載入金融股投資指標'}...
+        </td></tr>`;
+      }
+      state.investLoading = true;
+      try {
+        const ymParam = state.ym ? `&ym=${encodeURIComponent(state.ym)}` : "";
+        const resp = await fetch(`/api/invest_table?force=${force ? 1 : 0}${ymParam}`);
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || "載入失敗");
+        state.investMetrics = data.items || [];
+        const monthNum = data.self_profit_month || (state.ym ? parseInt(state.ym.slice(-2)) : 9);
+        const lbl = document.getElementById("lblInvSelfMonth");
+        if (lbl) lbl.textContent = `EPS(${monthNum}月自結)`;
+
+        const meta = document.getElementById("investMetaLabel");
+        if (meta) {
+          const srcTxt = data.source === "db" ? "🗄️ SQLite 快取" : "🌐 TWSE 即時 API";
+          meta.innerHTML = `共 <strong>${state.investMetrics.length}</strong> 檔金融股 ｜ 最新自結: <strong>${monthNum}月</strong> ｜ 來源: ${srcTxt} (${data.updated_at || ''})`;
+        }
+        renderInvestTable();
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="12" class="center" style="padding:28px; color:var(--neg);">
+            ❌ 載入投資表指標發生錯誤：${err.message}
+            <div style="margin-top:10px;"><button class="btn-ghost" onclick="loadInvestMetrics(true)">重試抓取</button></div>
+          </td></tr>`;
+        }
+      } finally {
+        state.investLoading = false;
+      }
+    }
+
+    function filterInvestTable(text) {
+      state.investFilterText = (text || "").trim().toLowerCase();
+      renderInvestTable();
+    }
+
+    function sortInvestTable(col) {
+      if (state.investSortCol === col) {
+        state.investSortAsc = !state.investSortAsc;
+      } else {
+        state.investSortCol = col;
+        state.investSortAsc = (col === "co_id" || col === "name");
+      }
+      renderInvestTable();
+    }
+
+    function getSortedInvestItems() {
+      let list = [...(state.investMetrics || [])];
+      if (state.investFilterText) {
+        const q = state.investFilterText;
+        list = list.filter(item => (
+          (item.co_id && item.co_id.toLowerCase().includes(q)) ||
+          (item.name && item.name.toLowerCase().includes(q))
+        ));
+      }
+      const col = state.investSortCol;
+      const asc = state.investSortAsc;
+
+      list.sort((a, b) => {
+        let va = a[col];
+        let vb = b[col];
+
+        if (va === null || va === undefined || va === "") return 1;
+        if (vb === null || vb === undefined || vb === "") return -1;
+
+        if (typeof va === "number" && typeof vb === "number") {
+          return asc ? (va - vb) : (vb - va);
+        }
+        return asc ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+      });
+      return list;
+    }
+
+    function renderInvestTable() {
+      const tbody = document.getElementById("investTbody");
+      if (!tbody) return;
+
+      const cols = ["co_id", "name", "price", "volume", "capital", "nav", "eps_self", "eps", "dividend", "pe", "yield"];
+      cols.forEach(c => {
+        const th = document.getElementById("thInv_" + c);
+        if (th) {
+          const isSorted = (c === "eps_self") ? (state.investSortCol === "eps_self_cum") : (c === state.investSortCol);
+          if (isSorted) {
+            th.className = "sortable sorted";
+            const icon = th.querySelector(".sort-icon");
+            if (icon) icon.textContent = state.investSortAsc ? "▲" : "▼";
+          } else {
+            th.className = "sortable";
+            const icon = th.querySelector(".sort-icon");
+            if (icon) icon.textContent = "⇅";
+          }
+        }
+      });
+
+      const items = getSortedInvestItems();
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="center" style="padding:28px; color:var(--muted);">
+          ${state.investFilterText ? '查無符合條件之金融股' : '暫無投資指標資料'}
+        </td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = items.map(item => {
+        const volVal = item.volume ? Math.round(item.volume / 1000) : null;
+        const volStr = volVal !== null ? volVal.toLocaleString() : "—";
+        const priceStr = item.price !== null && item.price !== undefined ? Number(item.price).toFixed(2) : "—";
+        const capStr = item.capital !== null && item.capital !== undefined ? Number(item.capital).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "—";
+        const navStr = item.nav !== null && item.nav !== undefined ? Number(item.nav).toFixed(2) : "—";
+        const epsStr = item.eps !== null && item.eps !== undefined ? Number(item.eps).toFixed(2) : "—";
+        const divStr = item.dividend !== null && item.dividend !== undefined ? Number(item.dividend).toFixed(2) : "—";
+        const peStr = item.pe !== null && item.pe !== undefined ? Number(item.pe).toFixed(2) : "—";
+
+        // EPS(X月自結)
+        let selfEpsHtml = '<span style="color:var(--muted); font-weight:600;">-</span>';
+        if (item.has_self_profit && item.eps_self_cum !== null && item.eps_self_cum !== undefined) {
+          const cumVal = Number(item.eps_self_cum).toFixed(2);
+          const monVal = (item.eps_self_mon !== null && item.eps_self_mon !== undefined) ? Number(item.eps_self_mon).toFixed(2) : null;
+          const monTag = monVal !== null ? `<span style="font-size:0.72rem; color:var(--muted); margin-left:3px;" title="${item.self_profit_month || 9}月單月自結EPS: ${monVal}元">(月 ${monVal})</span>` : "";
+          selfEpsHtml = `<span style="font-weight:700; color:#93c5fd;">${cumVal}</span>${monTag}`;
+        }
+
+        let yieldHtml = "—";
+        if (item.yield !== null && item.yield !== undefined) {
+          const yNum = Number(item.yield);
+          const yStr = yNum.toFixed(2) + "%";
+          if (yNum >= 5.0) {
+            yieldHtml = `<span class="tag-yield-high">${yStr}</span>`;
+          } else if (yNum >= 3.5) {
+            yieldHtml = `<span class="tag-yield-mid">${yStr}</span>`;
+          } else {
+            yieldHtml = `<span style="font-weight:600;">${yStr}</span>`;
+          }
+        }
+
+        const epsQuarterBadge = item.eps_quarter ? `<span style="font-size:0.7rem; color:var(--muted); margin-left:3px;" title="最新公告財報季別">(${item.eps_quarter})</span>` : "";
+        const divYearBadge = item.dividend_year ? `<span style="font-size:0.7rem; color:var(--muted); margin-left:3px;" title="股利年度">(${item.dividend_year})</span>` : "";
+
+        return `<tr>
+          <td>
+            <a class="stock-link" onclick="openStockDetail('${item.co_id}')" title="點擊檢視 ${item.co_id} ${item.name} 完整損益比對表">
+              ${item.co_id} 🔍
+            </a>
+          </td>
+          <td>
+            <a class="stock-link" onclick="openStockDetail('${item.co_id}')" title="點擊檢視 ${item.co_id} ${item.name} 完整損益比對表">
+              ${item.name}
+            </a>
+          </td>
+          <td class="num" style="font-weight:600; color:#f8fafc;">${priceStr}</td>
+          <td class="num">${volStr}</td>
+          <td class="num">${capStr}</td>
+          <td class="num">${navStr}</td>
+          <td class="num">${selfEpsHtml}</td>
+          <td class="num">${epsStr} ${epsQuarterBadge}</td>
+          <td class="num" style="font-weight:600; color:#38bdf8;">${divStr} ${divYearBadge}</td>
+          <td class="num">${peStr}</td>
+          <td class="center">${yieldHtml}</td>
+          <td class="center">
+            <button class="btn-ghost" style="padding:2px 8px; font-size:0.75rem;" onclick="openStockDetail('${item.co_id}')" title="查看 1~12 月損益表">
+              📈 損益
+            </button>
+          </td>
+        </tr>`;
+      }).join("");
+    }
+
+    async function openStockDetail(coId) {
+      if (state.companies[coId]) {
+        switchTab(coId);
+      } else {
+        await updateSingleStock(coId);
+        switchTab(coId);
+      }
+    }
+
+    async function exportInvestExcel() {
+      const items = getSortedInvestItems();
+      if (!items || items.length === 0) {
+        alert("尚無可匯出的投資表資料");
+        return;
+      }
+      try {
+        const resp = await fetch("/api/export_invest_excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items })
+        });
+        if (!resp.ok) throw new Error("匯出 Excel 失敗");
+        const blob = await resp.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        a.download = `金融股投資表_${todayStr}.xlsx`;
+        a.click();
+      } catch (err) {
+        alert("匯出投資表失敗: " + err.message);
+      }
+    }
+
+    function exportInvestCsv() {
+      const items = getSortedInvestItems();
+      if (!items || items.length === 0) {
+        alert("尚無可匯出的投資表資料");
+        return;
+      }
+      const m = (items[0] && items[0].self_profit_month) || (state.ym ? parseInt(state.ym.slice(-2)) : 9);
+      const headers = [
+        "代號", "名稱", "股價(元)", "成交量(張)", "普通股本(億元)", "每股淨值(元)",
+        `EPS(${m}月自結)`, "EPS(元)", "EPS季別", "配息(元)", "股利年度", "本益比", "殖利率(%)"
+      ];
+      const rows = [headers.join(",")];
+      for (const item of items) {
+        const vol = item.volume ? Math.round(item.volume / 1000) : "";
+        const epsSelfStr = (item.has_self_profit && item.eps_self_cum !== null && item.eps_self_cum !== undefined) ? item.eps_self_cum : "-";
+        rows.push([
+          `"${item.co_id}"`,
+          `"${item.name}"`,
+          item.price ?? "",
+          vol,
+          item.capital ?? "",
+          item.nav ?? "",
+          epsSelfStr,
+          item.eps ?? "",
+          `"${item.eps_quarter || ''}"`,
+          item.dividend ?? "",
+          `"${item.dividend_year || ''}"`,
+          item.pe ?? "",
+          item.yield !== null && item.yield !== undefined ? `${item.yield}%` : ""
+        ].join(","));
+      }
+      const blob = new Blob(["\uFEFF" + rows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      a.download = `金融股投資表_${todayStr}.csv`;
+      a.click();
+    }
+
+    function downloadCsv(headers, rows, filename) {
+      const lines = [headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(",")];
+      for (const r of rows) {
+        lines.push(r.map(c => `"${String(c === null || c === undefined ? '' : c).replace(/"/g, '""')}"`).join(","));
+      }
+      const blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    async function exportCompanyExcel() {
+      const comp = state.companies[state.activeTab];
+      if (!comp) {
+        alert("尚無此個股資料");
+        return;
+      }
+      try {
+        const resp = await fetch("/api/export_company_excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ comp })
+        });
+        if (!resp.ok) throw new Error("匯出失敗");
+        const blob = await resp.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `${comp.co_id}_${comp.name}_自結損益明細_${comp.y1}vs${comp.y2}.xlsx`;
+        a.click();
+      } catch (err) {
+        alert("匯出 Excel 失敗: " + err.message);
+      }
+    }
+
+    function exportCompanyCsv() {
+      const comp = state.companies[state.activeTab];
+      if (!comp) {
+        alert("尚無此個股資料");
+        return;
+      }
+      const headers = [
+        "月份",
+        `${comp.y1}年度 本月稅前損益`,
+        `${comp.y1}年度 本年累計稅前損益`,
+        `${comp.y2}年度 本月稅前損益`,
+        `${comp.y2}年度 本年累計稅前損益`,
+        "單月稅前 YoY",
+        "累計稅前 YoY"
+      ];
+      const rows = (comp.rows || []).map(r => [
+        r.month_label,
+        r.y1_month_pretax ?? "",
+        r.y1_cum_pretax ?? "",
+        r.y2_month_pretax ?? "",
+        r.y2_cum_pretax ?? "",
+        r.month_yoy !== null && r.month_yoy !== undefined ? `${(r.month_yoy * 100).toFixed(2)}%` : "",
+        r.cum_yoy !== null && r.cum_yoy !== undefined ? `${(r.cum_yoy * 100).toFixed(2)}%` : ""
+      ]);
+      downloadCsv(headers, rows, `${comp.co_id}_${comp.name}_自結損益明細_${comp.y1}vs${comp.y2}.csv`);
+    }
+
+    async function exportEzsearchExcel() {
+      const items = state.ezsearchItems;
+      if (!items || items.length === 0) {
+        alert("尚無可匯出的公告快易查資料");
+        return;
+      }
+      try {
+        const resp = await fetch("/api/export_ezsearch_excel", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items })
+        });
+        if (!resp.ok) throw new Error("匯出失敗");
+        const blob = await resp.blob();
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+        a.download = `MOPS_公告快易查_${todayStr}.xlsx`;
+        a.click();
+      } catch (err) {
+        alert("匯出 Excel 失敗: " + err.message);
+      }
+    }
+
+    function exportEzsearchCsv() {
+      const items = state.ezsearchItems;
+      if (!items || items.length === 0) {
+        alert("尚無可匯出的公告快易查資料");
+        return;
+      }
+      const headers = [
+        "公告日期", "公告時間", "市場產業別", "產業別代碼", "公司代號", "公司簡稱", "公告項目代碼", "公告項目", "公告主旨", "詳細連結"
+      ];
+      const rows = items.map(it => [
+        it.CDATE || "",
+        it.CTIME || "",
+        it.TYPEK || "",
+        it.CODE_NAME || "",
+        it.COMPANY_ID || "",
+        it.COMPANY_NAME || "",
+        it.AN_CODE || "",
+        it.AN_NAME || "",
+        it.SUBJECT || "",
+        it.HYPERLINK || ""
+      ]);
+      const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+      downloadCsv(headers, rows, `MOPS_公告快易查_${todayStr}.csv`);
+    }
+
+    // ================================================================ 公告快易查功能
+    async function loadEzsearchData(force = false) {
+      let rawSdate = (document.getElementById("inputEzSdate")?.value || "").trim();
+      let rawEdate = (document.getElementById("inputEzEdate")?.value || "").trim();
+      if (!rawSdate) rawSdate = "2026-10-01";
+      if (!rawEdate) rawEdate = "2026-10-23";
+
+      // 自動轉換為證交所 API 接受的 YYYYMMDD (例如 2026-10-01 -> 20261001)
+      const sdate = rawSdate.replace(/-/g, "");
+      const edate = rawEdate.replace(/-/g, "");
+      const subject = (document.getElementById("inputEzSubject")?.value || "自結").trim();
+      const tbody = document.getElementById("ezsearchTbody");
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">正在連線至證交所讀取公告快易查資料...</td></tr>`;
+      }
+      try {
+        const url = `/api/ezsearch?sdate=${encodeURIComponent(sdate)}&edate=${encodeURIComponent(edate)}&subject=${encodeURIComponent(subject)}`;
+        const resp = await fetch(url);
+        const data = await resp.json();
+        if (!data.ok) throw new Error(data.error || "讀取失敗");
+        state.ezsearchItems = data.items || [];
+        state.ezsearchLoaded = true;
+        document.getElementById("ezsearchCount").textContent = state.ezsearchItems.length;
+        document.getElementById("ezsearchTime").textContent = `更新時間: ${data.updated_at || ''}`;
+        
+        // 更新原始 API URL 連結
+        const lnk = document.getElementById("lnkEzsearchApi");
+        if (lnk && data.url) lnk.href = data.url;
+
+        renderEzsearchTable(state.ezsearchItems);
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:#f87171;">讀取公告失敗: ${err.message}</td></tr>`;
+        }
+      }
+    }
+
+    function renderEzsearchTable(items) {
+      const tbody = document.getElementById("ezsearchTbody");
+      if (!tbody) return;
+      document.getElementById("ezsearchShownCount").textContent = items.length;
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">查無符合條件之公告</td></tr>`;
+        return;
+      }
+      const kw = (document.getElementById("inputEzSubject")?.value || "自結").trim();
+      tbody.innerHTML = items.map(item => {
+        let subj = item.SUBJECT || "";
+        if (kw) {
+          const reg = new RegExp(kw, "gi");
+          subj = subj.replace(reg, `<mark style="background:#fef08a; color:#854d0e; padding:1px 4px; border-radius:3px; font-weight:700;">$&</mark>`);
+        }
+        const link = item.HYPERLINK || "#";
+        return `<tr>
+          <td style="padding:9px 12px; border:1px solid var(--border); font-family:Consolas, monospace; font-size:0.83rem; white-space:nowrap;">
+            ${item.CDATE || ''}<br><span style="color:var(--muted);">${item.CTIME || ''}</span>
+          </td>
+          <td style="padding:9px 12px; border:1px solid var(--border); font-size:0.83rem;">
+            ${item.TYPEK || ''}<br><span style="color:var(--muted);">${item.CODE_NAME || ''}</span>
+          </td>
+          <td style="padding:9px 12px; border:1px solid var(--border); font-weight:700; color:#93c5fd;">
+            ${item.COMPANY_ID || ''}
+          </td>
+          <td style="padding:9px 12px; border:1px solid var(--border); font-weight:600; color:#f8fafc;">
+            ${item.COMPANY_NAME || ''}
+          </td>
+          <td style="padding:9px 12px; border:1px solid var(--border); font-size:0.83rem;">
+            <span style="font-weight:700; color:#60a5fa;">${item.AN_CODE || ''}</span><br>
+            <span style="color:var(--muted);">${item.AN_NAME || ''}</span>
+          </td>
+          <td style="padding:9px 12px; border:1px solid var(--border); font-size:0.85rem; line-height:1.5;">
+            ${subj}
+          </td>
+          <td style="padding:9px 12px; border:1px solid var(--border); text-align:center;">
+            <a href="${link}" target="_blank" rel="noopener" class="source-link" style="padding:4px 8px; font-size:0.82rem;" title="在新分頁開啟此則重大訊息詳細公告">
+              🔍 詳情
+            </a>
+          </td>
+        </tr>`;
+      }).join("");
+    }
+
+    function filterEzsearchTable(q) {
+      if (!state.ezsearchItems) return;
+      const lower = q.trim().toLowerCase();
+      if (!lower) {
+        renderEzsearchTable(state.ezsearchItems);
+        return;
+      }
+      const filtered = state.ezsearchItems.filter(item => {
+        return (item.COMPANY_ID && item.COMPANY_ID.toLowerCase().includes(lower)) ||
+               (item.COMPANY_NAME && item.COMPANY_NAME.toLowerCase().includes(lower)) ||
+               (item.SUBJECT && item.SUBJECT.toLowerCase().includes(lower)) ||
+               (item.CDATE && item.CDATE.includes(lower));
+      });
+      renderEzsearchTable(filtered);
+    }
+
+    function toggleSummaryControls() {
+      const grid = document.getElementById("summaryControlsGrid");
+      const lbl = document.getElementById("lblToggleSummaryControls");
+      if (!grid) return;
+      if (grid.style.display === "none") {
+        grid.style.display = "grid";
+        if (lbl) lbl.textContent = "收合更新設定";
+      } else {
+        grid.style.display = "none";
+        if (lbl) lbl.textContent = "展開更新設定";
+      }
+    }
+
+    function toggleSourceBlock(num) {
+      const el = document.getElementById("srcBlock" + num);
+      const btn = document.getElementById("btnSrc" + num);
+      const ico = document.getElementById("icoSrc" + num);
+      if (!el) return;
+      const isHidden = (el.style.display === "none");
+      if (isHidden) {
+        el.style.display = (num === 1) ? "grid" : "block";
+        if (ico) ico.textContent = "▼";
+        if (btn) {
+          if (num === 1) btn.textContent = "👁️ 收合卡片";
+          else if (num === 2) btn.textContent = "👁️ 收合清單";
+          else if (num === 3) btn.textContent = "👁️ 收合公式";
+        }
+      } else {
+        el.style.display = "none";
+        if (ico) ico.textContent = "▶";
+        if (btn) {
+          if (num === 1) btn.textContent = "👁️ 展開卡片";
+          else if (num === 2) btn.textContent = "👁️ 展開清單";
+          else if (num === 3) btn.textContent = "👁️ 展開公式";
+        }
+      }
+    }
+
+    function toggleAllSourceBlocks() {
+      const b1 = document.getElementById("srcBlock1");
+      const b2 = document.getElementById("srcBlock2");
+      const b3 = document.getElementById("srcBlock3");
+      const anyVisible = (b1 && b1.style.display !== "none") ||
+                         (b2 && b2.style.display !== "none") ||
+                         (b3 && b3.style.display !== "none");
+      const targetState = anyVisible ? "none" : "show";
+      [1, 2, 3].forEach(n => {
+        const el = document.getElementById("srcBlock" + n);
+        const btn = document.getElementById("btnSrc" + n);
+        const ico = document.getElementById("icoSrc" + n);
+        if (!el) return;
+        if (targetState === "none") {
+          el.style.display = "none";
+          if (ico) ico.textContent = "▶";
+          if (btn) btn.textContent = (n === 1 ? "👁️ 展開卡片" : n === 2 ? "👁️ 展開清單" : "👁️ 展開公式");
+        } else {
+          el.style.display = (n === 1) ? "grid" : "block";
+          if (ico) ico.textContent = "▼";
+          if (btn) btn.textContent = (n === 1 ? "👁️ 收合卡片" : n === 2 ? "👁️ 收合清單" : "👁️ 收合公式");
+        }
+      });
+    }
+
+    function toggleEzsearchScreenshot() {
+      const wrap = document.getElementById("ezsearchImgWrap");
+      const btnCard = document.getElementById("btnToggleScreenshotCard");
+      const lblTop = document.getElementById("lblToggleScreenshot");
+      const ico = document.getElementById("icoToggleScreenshot");
+      if (!wrap) return;
+      if (wrap.style.display === "none") {
+        wrap.style.display = "block";
+        if (btnCard) btnCard.textContent = "👁️ 隱藏截圖";
+        if (lblTop) lblTop.textContent = "收合原始截圖";
+        if (ico) ico.textContent = "▼";
+      } else {
+        wrap.style.display = "none";
+        if (btnCard) btnCard.textContent = "👁️ 顯示截圖";
+        if (lblTop) lblTop.textContent = "展開原始截圖";
+        if (ico) ico.textContent = "▶";
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", initApp);
+  </script>
+</body>
+</html>
