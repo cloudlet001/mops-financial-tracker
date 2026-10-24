@@ -1130,24 +1130,39 @@
         </div>
       </div>
 
-      <!-- 原始截圖展示區塊 (預設隱藏，支援 顯示/隱藏 Toggle) -->
+      <!-- 原始截圖展示區塊 (預設隱藏，支援 顯示/隱藏 Toggle 與並排展示) -->
       <div id="ezsearchScreenshotBox" style="background:#0f172a; border:1px solid rgba(59,130,246,0.3); border-radius:8px; padding:14px 18px; margin-bottom:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; user-select:none; cursor:pointer;" onclick="toggleEzsearchScreenshot()">
           <strong style="color:#60a5fa; font-size:0.92rem; display:flex; align-items:center; gap:8px;">
             <span id="icoToggleScreenshot" style="font-size:0.8rem; color:#93c5fd; display:inline-block; transition:transform 0.2s;">▶</span>
-            📷 證交所公開資訊觀測站「公告快易查」查詢畫面截圖對照
+            📷 證交所公開資訊觀測站「公告快易查」操作步驟與查詢畫面截圖對照 (雙圖並排)
           </strong>
           <div style="display:flex; gap:10px; align-items:center;" onclick="event.stopPropagation();">
             <button class="btn-ghost" id="btnToggleScreenshotCard" onclick="toggleEzsearchScreenshot()" style="padding:4px 12px; font-size:0.8rem; border-color:rgba(59,130,246,0.4);" title="切換顯示或隱藏原始截圖">
               👁️ 顯示截圖
             </button>
-            <a href="/assets/ezsearch_screenshot.png" target="_blank" rel="noopener" class="source-link" style="font-size:0.8rem;">
-              🔍 開啟原圖 ↗
-            </a>
           </div>
         </div>
-        <div id="ezsearchImgWrap" style="text-align:center; overflow-x:auto; margin-top:12px; display:none;">
-          <img src="/assets/ezsearch_screenshot.png" alt="證交所公告快易查截圖" style="max-width:100%; height:auto; border-radius:6px; border:1px solid #334155; box-shadow:0 4px 14px rgba(0,0,0,0.6); cursor:pointer;" onclick="window.open(this.src)" title="點擊在新視窗檢視原始大圖" />
+        <div id="ezsearchImgWrap" style="margin-top:14px; display:none;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px; align-items:start;">
+            <!-- 左側截圖：步驟一 MOPS 首頁入口 -->
+            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px; text-align:center;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.84rem; color:#93c5fd; font-weight:600;">
+                <span>① MOPS 首頁 點選右上角「公告快易查 ↗」</span>
+                <a href="/assets/ezsearch_step1_mops.png" target="_blank" rel="noopener" class="source-link" style="font-size:0.75rem;">🔍 開啟原圖 ↗</a>
+              </div>
+              <img src="/assets/ezsearch_step1_mops.png" alt="步驟一：MOPS 首頁入口截圖" style="max-width:100%; height:auto; border-radius:6px; border:1px solid #475569; box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer;" onclick="window.open(this.src)" title="點擊在新視窗檢視原始大圖" />
+            </div>
+
+            <!-- 右側截圖：步驟二 公告快易查查詢畫面對照 -->
+            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px; text-align:center;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.84rem; color:#34d399; font-weight:600;">
+                <span>② 證交所公告快易查 查詢設定與結果截圖</span>
+                <a href="/assets/ezsearch_screenshot.png" target="_blank" rel="noopener" class="source-link" style="font-size:0.75rem;">🔍 開啟原圖 ↗</a>
+              </div>
+              <img src="/assets/ezsearch_screenshot.png" alt="步驟二：證交所公告快易查截圖" style="max-width:100%; height:auto; border-radius:6px; border:1px solid #475569; box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer;" onclick="window.open(this.src)" title="點擊在新視窗檢視原始大圖" />
+            </div>
+          </div>
         </div>
       </div>
 
