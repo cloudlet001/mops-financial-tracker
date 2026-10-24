@@ -1144,23 +1144,27 @@
           </div>
         </div>
         <div id="ezsearchImgWrap" style="margin-top:14px; display:none;">
-          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px; align-items:start;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(420px, 1fr)); gap:16px; align-items:stretch;">
             <!-- 左側截圖：步驟一 MOPS 首頁入口 -->
-            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px; text-align:center;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.84rem; color:#93c5fd; font-weight:600;">
+            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px; display:flex; flex-direction:column; height:100%; box-sizing:border-box;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; min-height:24px; font-size:0.84rem; color:#93c5fd; font-weight:600;">
                 <span>① MOPS 首頁 點選右上角「公告快易查 ↗」</span>
                 <a href="/assets/ezsearch_step1_mops.png" target="_blank" rel="noopener" class="source-link" style="font-size:0.75rem;">🔍 開啟原圖 ↗</a>
               </div>
-              <img src="/assets/ezsearch_step1_mops.png" alt="步驟一：MOPS 首頁入口截圖" style="max-width:100%; height:auto; border-radius:6px; border:1px solid #475569; box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer;" onclick="window.open(this.src)" title="點擊在新視窗檢視原始大圖" />
+              <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+                <img src="/assets/ezsearch_step1_mops.png" alt="步驟一：MOPS 首頁入口截圖" style="width:100%; aspect-ratio:1024/486; object-fit:contain; border-radius:6px; border:1px solid #475569; box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer; display:block;" onclick="window.open(this.src)" title="點擊在新視窗檢視原始大圖" />
+              </div>
             </div>
 
             <!-- 右側截圖：步驟二 公告快易查查詢畫面對照 -->
-            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px; text-align:center;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:0.84rem; color:#34d399; font-weight:600;">
+            <div style="background:#1e293b; border:1px solid #334155; border-radius:8px; padding:12px; display:flex; flex-direction:column; height:100%; box-sizing:border-box;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; min-height:24px; font-size:0.84rem; color:#34d399; font-weight:600;">
                 <span>② 證交所公告快易查 查詢設定與結果截圖</span>
                 <a href="/assets/ezsearch_screenshot.png" target="_blank" rel="noopener" class="source-link" style="font-size:0.75rem;">🔍 開啟原圖 ↗</a>
               </div>
-              <img src="/assets/ezsearch_screenshot.png" alt="步驟二：證交所公告快易查截圖" style="max-width:100%; height:auto; border-radius:6px; border:1px solid #475569; box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer;" onclick="window.open(this.src)" title="點擊在新視窗檢視原始大圖" />
+              <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+                <img src="/assets/ezsearch_screenshot.png" alt="步驟二：證交所公告快易查截圖" style="width:100%; aspect-ratio:1024/486; object-fit:contain; border-radius:6px; border:1px solid #475569; box-shadow:0 4px 12px rgba(0,0,0,0.5); cursor:pointer; display:block;" onclick="window.open(this.src)" title="點擊在新視窗檢視原始大圖" />
+              </div>
             </div>
           </div>
         </div>
