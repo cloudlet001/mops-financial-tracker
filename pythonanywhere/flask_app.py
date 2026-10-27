@@ -1005,14 +1005,31 @@ def generate_ezsearch_excel_bytes(items):
     return out.getvalue()
 
 
-def fetch_ezsearch_announcements(sdate="20261001", edate="20261023", subject="自結", co_id=""):
-    sdate_clean = str(sdate).strip().replace("-", "")
-    edate_clean = str(edate).strip().replace("-", "")
-    encoded_subj = urllib.parse.quote(subject)
-    encoded_sdate = urllib.parse.quote(sdate_clean)
-    encoded_edate = urllib.parse.quote(edate_clean)
-    encoded_coid = urllib.parse.quote(co_id)
-    url = f"https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID={encoded_coid}&PRO_ITEM=M99&SUBJECT={encoded_subj}&SDATE={encoded_sdate}&EDATE={encoded_edate}&lang=TW&AN="
+def fetch_ezsearch_announcements(sdate="20261001", edate="20261023", subject="自結", co_id="", custom_url=""):
+    if custom_url and custom_url.strip():
+        url = custom_url.strip()
+        try:
+            parsed = urllib.parse.urlparse(url)
+            params = urllib.parse.parse_qs(parsed.query)
+            if "SUBJECT" in params and params["SUBJECT"]:
+                subject = params["SUBJECT"][0]
+            if "SDATE" in params and params["SDATE"]:
+                sdate = params["SDATE"][0]
+            if "EDATE" in params and params["EDATE"]:
+                edate = params["EDATE"][0]
+            if "CO_ID" in params and params["CO_ID"]:
+                co_id = params["CO_ID"][0]
+        except Exception:
+            pass
+    else:
+        sdate_clean = str(sdate).strip().replace("-", "")
+        edate_clean = str(edate).strip().replace("-", "")
+        encoded_subj = urllib.parse.quote(subject)
+        encoded_sdate = urllib.parse.quote(sdate_clean)
+        encoded_edate = urllib.parse.quote(edate_clean)
+        encoded_coid = urllib.parse.quote(co_id)
+        url = f"https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID={encoded_coid}&PRO_ITEM=M99&SUBJECT={encoded_subj}&SDATE={encoded_sdate}&EDATE={encoded_edate}&lang=TW&AN="
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Referer": "https://mopsov.twse.com.tw/mops/web/ezsearch"
@@ -1076,11 +1093,12 @@ def application(environ, start_response):
 
         if path == "/api/ezsearch":
             sdate = qs.get("sdate", ["20261001"])[0].strip()
-            edate = qs.get("edate", ["115/10/23"])[0].strip()
+            edate = qs.get("edate", ["20261023"])[0].strip()
             subject = qs.get("subject", ["自結"])[0].strip()
             co_id = qs.get("co_id", [""])[0].strip()
+            custom_url = qs.get("url", [""])[0].strip()
             try:
-                data = fetch_ezsearch_announcements(sdate=sdate, edate=edate, subject=subject, co_id=co_id)
+                data = fetch_ezsearch_announcements(sdate=sdate, edate=edate, subject=subject, co_id=co_id, custom_url=custom_url)
                 return _json_response(start_response, {"ok": True, **data})
             except Exception as e:
                 return _json_response(start_response, {"ok": False, "error": str(e)}, "500 Internal Server Error")

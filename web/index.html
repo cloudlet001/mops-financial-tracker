@@ -1098,7 +1098,7 @@
           <button class="btn-primary" onclick="loadEzsearchData(true)">🔄 重新查詢公告</button>
           <button class="btn-ghost" onclick="toggleEzsearchScreenshot()">🖼️ <span id="lblToggleScreenshot">展開原始截圖</span></button>
           <a class="source-link" href="https://mopsov.twse.com.tw/mops/web/ezsearch" target="_blank" rel="noopener">🌐 證交所快易查首頁 ↗</a>
-          <a id="lnkEzsearchApi" class="source-link" href="https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID=&PRO_ITEM=M99&SUBJECT=%E8%87%AA%E7%B5%90&SDATE=20261001&EDATE=115/10/23&lang=TW&AN=" target="_blank" rel="noopener">🔗 原始 API URL ↗</a>
+          <a id="lnkEzsearchApi" class="source-link" href="https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID=&PRO_ITEM=M99&SUBJECT=%E8%87%AA%E7%B5%90&SDATE=20261001&EDATE=20261023&lang=TW&AN=" target="_blank" rel="noopener">🔗 原始 API URL ↗</a>
         </div>
       </div>
 
@@ -1113,20 +1113,51 @@
         <div class="form-row" style="gap:14px; flex-wrap:wrap;">
           <div>
             <label style="font-size:0.82rem; color:var(--muted);">主旨關鍵字：</label>
-            <input type="text" id="inputEzSubject" value="自結" style="width:100px; padding:6px 10px; font-weight:600;" />
+            <input type="text" id="inputEzSubject" value="自結" oninput="syncEzsearchUrlFromInputs()" onkeydown="if(event.key==='Enter'){loadEzsearchData(true);}" style="width:100px; padding:6px 10px; font-weight:600;" />
           </div>
           <div>
             <label style="font-size:0.82rem; color:var(--muted);">資料起日：</label>
-            <input type="date" id="inputEzSdate" value="2026-10-01" onchange="loadEzsearchData(true)" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
+            <input type="date" id="inputEzSdate" value="2026-10-01" onchange="syncEzsearchUrlFromInputs(); loadEzsearchData(true);" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
           </div>
           <div>
             <label style="font-size:0.82rem; color:var(--muted);">資料迄日：</label>
-            <input type="date" id="inputEzEdate" value="2026-10-23" onchange="loadEzsearchData(true)" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
+            <input type="date" id="inputEzEdate" value="2026-10-23" onchange="syncEzsearchUrlFromInputs(); loadEzsearchData(true);" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
           </div>
           <button class="btn-warn" onclick="loadEzsearchData(true)">執行查詢</button>
           <div style="margin-left:auto;">
             <input type="text" id="inputEzFilter" placeholder="🔍 快速過濾代號 / 名稱 / 主旨..." oninput="filterEzsearchTable(this.value)" style="width:220px; padding:6px 12px;" />
           </div>
+        </div>
+
+        <!-- 執行 URL 與 重設功能 (紅框處) -->
+        <div style="margin-top:12px; padding-top:12px; border-top:1px dashed rgba(255,255,255,0.12); display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:6px; white-space:nowrap;">
+            <label for="inputEzUrl" style="font-size:0.82rem; color:#93c5fa; font-weight:600; display:flex; align-items:center; gap:4px;">
+              <span>🔗</span> 執行 URL：
+            </label>
+            <span id="lblEzUrlStatus" style="font-size:0.75rem; color:#facc15; display:none; padding:1px 6px; background:rgba(250,204,21,0.15); border-radius:4px; border:1px solid rgba(250,204,21,0.3);">
+              ✏️ 已手動編輯
+            </span>
+          </div>
+          <input 
+            type="text" 
+            id="inputEzUrl" 
+            value="https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID=&PRO_ITEM=M99&SUBJECT=%E8%87%AA%E7%B5%90&SDATE=20261001&EDATE=20261023&lang=TW&AN=" 
+            oninput="onEzUrlInput()" 
+            onkeydown="if(event.key==='Enter'){loadEzsearchData(true);}" 
+            placeholder="請輸入或手動修改要執行的證交所 API URL..." 
+            title="可手動修改此 URL，按 Enter 或點擊「執行查詢」即可執行查詢" 
+            style="flex:1; min-width:320px; padding:6px 10px; font-family:Consolas, 'Courier New', monospace; font-size:0.82rem; background:#090d16; color:#38bdf8; border:1px solid #334155; border-radius:6px;" 
+          />
+          <button 
+            type="button" 
+            class="btn-ghost" 
+            id="btnResetEzUrl" 
+            onclick="resetEzsearchUrl()" 
+            style="padding:6px 12px; font-size:0.82rem; border-color:rgba(148,163,184,0.4); white-space:nowrap; display:flex; align-items:center; gap:5px;" 
+            title="將 URL 還原回原始預設設定">
+            🔄 重設 URL (Reset)
+          </button>
         </div>
       </div>
 
@@ -1234,7 +1265,9 @@
 
       // 自結公告快易查狀態
       ezsearchItems: [],
-      ezsearchLoaded: false
+      ezsearchLoaded: false,
+      isEzUrlCustomized: false,
+      ezsearchKeyword: "自結"
     };
 
     function switchCard1Tab(tabName) {
@@ -2287,6 +2320,52 @@
     }
 
     // ================================================================ 公告快易查功能
+    function buildDefaultEzsearchUrl() {
+      let rawSdate = (document.getElementById("inputEzSdate")?.value || "2026-10-01").trim();
+      let rawEdate = (document.getElementById("inputEzEdate")?.value || "2026-10-23").trim();
+      const sdate = rawSdate.replace(/-/g, "");
+      const edate = rawEdate.replace(/-/g, "");
+      const subject = (document.getElementById("inputEzSubject")?.value || "自結").trim();
+      return `https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID=&PRO_ITEM=M99&SUBJECT=${encodeURIComponent(subject)}&SDATE=${encodeURIComponent(sdate)}&EDATE=${encodeURIComponent(edate)}&lang=TW&AN=`;
+    }
+
+    function syncEzsearchUrlFromInputs() {
+      if (!state.isEzUrlCustomized) {
+        const defUrl = buildDefaultEzsearchUrl();
+        const inputUrl = document.getElementById("inputEzUrl");
+        if (inputUrl) inputUrl.value = defUrl;
+        const lnk = document.getElementById("lnkEzsearchApi");
+        if (lnk) lnk.href = defUrl;
+      }
+    }
+
+    function onEzUrlInput() {
+      state.isEzUrlCustomized = true;
+      const badge = document.getElementById("lblEzUrlStatus");
+      if (badge) badge.style.display = "inline-block";
+      const val = document.getElementById("inputEzUrl")?.value.trim();
+      const lnk = document.getElementById("lnkEzsearchApi");
+      if (lnk && val) lnk.href = val;
+    }
+
+    function resetEzsearchUrl() {
+      state.isEzUrlCustomized = false;
+      const inputSubject = document.getElementById("inputEzSubject");
+      const inputSdate = document.getElementById("inputEzSdate");
+      const inputEdate = document.getElementById("inputEzEdate");
+      if (inputSubject) inputSubject.value = "自結";
+      if (inputSdate) inputSdate.value = "2026-10-01";
+      if (inputEdate) inputEdate.value = "2026-10-23";
+      
+      const defaultUrl = buildDefaultEzsearchUrl();
+      const inputUrl = document.getElementById("inputEzUrl");
+      if (inputUrl) inputUrl.value = defaultUrl;
+      const badge = document.getElementById("lblEzUrlStatus");
+      if (badge) badge.style.display = "none";
+      const lnk = document.getElementById("lnkEzsearchApi");
+      if (lnk) lnk.href = defaultUrl;
+    }
+
     async function loadEzsearchData(force = false) {
       let rawSdate = (document.getElementById("inputEzSdate")?.value || "").trim();
       let rawEdate = (document.getElementById("inputEzEdate")?.value || "").trim();
@@ -2297,21 +2376,31 @@
       const sdate = rawSdate.replace(/-/g, "");
       const edate = rawEdate.replace(/-/g, "");
       const subject = (document.getElementById("inputEzSubject")?.value || "自結").trim();
+
+      // 取得設定要執行的 URL（支援使用者手動 edit）
+      let targetUrl = (document.getElementById("inputEzUrl")?.value || "").trim();
+      if (!targetUrl) {
+        targetUrl = buildDefaultEzsearchUrl();
+        const inputUrl = document.getElementById("inputEzUrl");
+        if (inputUrl) inputUrl.value = targetUrl;
+      }
+
       const tbody = document.getElementById("ezsearchTbody");
       if (tbody) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">正在連線至證交所讀取公告快易查資料...</td></tr>`;
       }
       try {
-        const url = `/api/ezsearch?sdate=${encodeURIComponent(sdate)}&edate=${encodeURIComponent(edate)}&subject=${encodeURIComponent(subject)}`;
+        const url = `/api/ezsearch?url=${encodeURIComponent(targetUrl)}&sdate=${encodeURIComponent(sdate)}&edate=${encodeURIComponent(edate)}&subject=${encodeURIComponent(subject)}`;
         const resp = await fetch(url);
         const data = await resp.json();
         if (!data.ok) throw new Error(data.error || "讀取失敗");
         state.ezsearchItems = data.items || [];
         state.ezsearchLoaded = true;
+        state.ezsearchKeyword = data.subject || subject;
         document.getElementById("ezsearchCount").textContent = state.ezsearchItems.length;
         document.getElementById("ezsearchTime").textContent = `更新時間: ${data.updated_at || ''}`;
         
-        // 更新原始 API URL 連結
+        // 更新原始 API URL 連結與 URL 輸入框
         const lnk = document.getElementById("lnkEzsearchApi");
         if (lnk && data.url) lnk.href = data.url;
 
@@ -2331,7 +2420,7 @@
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">查無符合條件之公告</td></tr>`;
         return;
       }
-      const kw = (document.getElementById("inputEzSubject")?.value || "自結").trim();
+      const kw = (state.ezsearchKeyword || document.getElementById("inputEzSubject")?.value || "自結").trim();
       tbody.innerHTML = items.map(item => {
         let subj = item.SUBJECT || "";
         if (kw) {
