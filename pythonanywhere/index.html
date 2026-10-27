@@ -1102,9 +1102,9 @@
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn-primary" onclick="loadEzsearchData(true)">🔄 重新查詢公告</button>
-          <button class="btn-ghost" onclick="toggleEzsearchScreenshot()">🖼️ <span id="lblToggleScreenshot">展開原始截圖</span></button>
           <a class="source-link" href="https://mopsov.twse.com.tw/mops/web/ezsearch" target="_blank" rel="noopener">🌐 證交所快易查首頁 ↗</a>
           <a id="lnkEzsearchApi" class="source-link" href="https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID=&PRO_ITEM=M99&SUBJECT=%E8%87%AA%E7%B5%90&SDATE=20261001&EDATE=20261023&lang=TW&AN=" target="_blank" rel="noopener">🔗 原始 API URL ↗</a>
+          <button class="btn-ghost" onclick="toggleEzsearchScreenshot()">🖼️ <span id="lblToggleScreenshot">展開原始截圖</span></button>
         </div>
       </div>
 
@@ -1115,8 +1115,9 @@
             <span>🔍 證交所查詢參數設定</span>
             <button class="btn-warn" onclick="loadEzsearchData(true)" style="padding:5px 16px; font-size:0.85rem;">執行查詢</button>
           </span>
+          <input type="text" id="inputEzFilter" placeholder="🔍 快速過濾代號 / 名稱 / 主旨..." oninput="filterEzsearchTable(this.value)" style="width:220px; padding:6px 12px; margin-left:auto; margin-right:16px; font-weight:normal;" />
           <span style="font-size:0.8rem; font-weight:normal; color:var(--muted);">
-            市場/產業：<span id="lblEzMarketSummary">上市 17 金融保險業</span> ｜ 公告項目：M99 其他重大事項
+            市場/產業：<span id="lblEzMarketSummary">上市 17 金融保險業</span> ｜ 公告項目：<span id="lblEzItemSummary">M99 其他重要事項</span>
           </span>
         </div>
         <div class="form-row" style="gap:14px; flex-wrap:wrap;">
@@ -1144,8 +1145,13 @@
             <label style="font-size:0.82rem; color:var(--muted);">資料迄日：</label>
             <input type="date" id="inputEzEdate" value="2026-10-23" onchange="syncEzsearchUrlFromInputs();" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
           </div>
-          <div style="margin-left:auto;">
-            <input type="text" id="inputEzFilter" placeholder="🔍 快速過濾代號 / 名稱 / 主旨..." oninput="filterEzsearchTable(this.value)" style="width:220px; padding:6px 12px;" />
+          <div>
+            <label style="font-size:0.82rem; color:var(--muted);">公告項目：</label>
+            <select id="selEzItem" onchange="onEzItemChange()" style="padding:6px 10px; font-weight:600; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+              <option value="M99" selected>M99 其他重要事項</option>
+              <option value="M00">M00 重大訊息</option>
+              <option value="Total%23">ALL 全部公告項目</option>
+            </select>
           </div>
         </div>
 
@@ -2402,6 +2408,22 @@
       onEzIndustryChange();
     }
 
+    // 公告項目 (value 已是 URL 編碼後的值，例如 Total%23 = "Total#"，組 URL 時不可再次編碼)
+    function getEzItemValue() {
+      return document.getElementById("selEzItem")?.value || "M99";
+    }
+
+    function updateEzItemSummary() {
+      const sel = document.getElementById("selEzItem");
+      const lbl = document.getElementById("lblEzItemSummary");
+      if (sel && lbl && sel.selectedIndex >= 0) lbl.textContent = sel.options[sel.selectedIndex].text;
+    }
+
+    function onEzItemChange() {
+      updateEzItemSummary();
+      syncEzsearchUrlFromInputs();
+    }
+
     function onEzIndustryChange() {
       updateEzMarketSummary();
       syncEzsearchUrlFromInputs();
@@ -2412,6 +2434,9 @@
       if (mSel) mSel.value = EZ_DEFAULT_MARKET;
       populateEzIndustryOptions(EZ_DEFAULT_MARKET, EZ_DEFAULT_INDUSTRY);
       updateEzMarketSummary();
+      const iSel = document.getElementById("selEzItem");
+      if (iSel) iSel.value = "M99";
+      updateEzItemSummary();
     }
 
     function buildDefaultEzsearchUrl() {
@@ -2421,7 +2446,7 @@
       const edate = rawEdate.replace(/-/g, "");
       const subject = (document.getElementById("inputEzSubject")?.value || "自結").trim();
       const { market, industry } = getEzMarketIndustry();
-      return `https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=${encodeURIComponent(market)}&CO_MARKET=${encodeURIComponent(industry)}&CO_ID=&PRO_ITEM=M99&SUBJECT=${encodeURIComponent(subject)}&SDATE=${encodeURIComponent(sdate)}&EDATE=${encodeURIComponent(edate)}&lang=TW&AN=`;
+      return `https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=${encodeURIComponent(market)}&CO_MARKET=${encodeURIComponent(industry)}&CO_ID=&PRO_ITEM=${getEzItemValue()}&SUBJECT=${encodeURIComponent(subject)}&SDATE=${encodeURIComponent(sdate)}&EDATE=${encodeURIComponent(edate)}&lang=TW&AN=`;
     }
 
     function syncEzsearchUrlFromInputs() {
