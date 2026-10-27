@@ -269,6 +269,12 @@
       background: var(--tbl-head);
       box-shadow: 0 1px 0 var(--border);
     }
+    th.ez-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+    th.ez-sortable:hover { color: #f8fafc; background: #273449; }
+    th.ez-sortable .ez-sort-ico { margin-left: 4px; font-size: 0.75rem; color: #64748b; }
+    th.ez-sortable .ez-sort-ico::after { content: "⇅"; }
+    th.ez-sortable.asc .ez-sort-ico::after { content: "▲"; color: #facc15; }
+    th.ez-sortable.desc .ez-sort-ico::after { content: "▼"; color: #facc15; }
     table {
       width: 100%;
       border-collapse: collapse;
@@ -1105,25 +1111,39 @@
       <!-- 查詢參數與即時搜尋面板 -->
       <div class="card" style="margin-bottom:20px; background:#0f172a;">
         <div class="card-title" style="margin-bottom:10px;">
-          <span>🔍 證交所查詢參數設定</span>
+          <span style="display:flex; align-items:center; gap:14px;">
+            <span>🔍 證交所查詢參數設定</span>
+            <button class="btn-warn" onclick="loadEzsearchData(true)" style="padding:5px 16px; font-size:0.85rem;">執行查詢</button>
+          </span>
           <span style="font-size:0.8rem; font-weight:normal; color:var(--muted);">
-            市場/產業：上市 17 金融保險業 ｜ 公告項目：M99 其他重大事項
+            市場/產業：<span id="lblEzMarketSummary">上市 17 金融保險業</span> ｜ 公告項目：M99 其他重大事項
           </span>
         </div>
         <div class="form-row" style="gap:14px; flex-wrap:wrap;">
+          <div>
+            <label style="font-size:0.82rem; color:var(--muted);">市場：</label>
+            <select id="selEzMarket" onchange="onEzMarketChange()" style="padding:6px 10px; font-weight:600; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;">
+              <option value="sii" selected>上市</option>
+              <option value="otc">上櫃</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:0.82rem; color:var(--muted);">產業：</label>
+            <select id="selEzIndustry" onchange="onEzIndustryChange()" style="padding:6px 10px; font-weight:600; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer; min-width:150px;">
+            </select>
+          </div>
           <div>
             <label style="font-size:0.82rem; color:var(--muted);">主旨關鍵字：</label>
             <input type="text" id="inputEzSubject" value="自結" oninput="syncEzsearchUrlFromInputs()" onkeydown="if(event.key==='Enter'){loadEzsearchData(true);}" style="width:100px; padding:6px 10px; font-weight:600;" />
           </div>
           <div>
             <label style="font-size:0.82rem; color:var(--muted);">資料起日：</label>
-            <input type="date" id="inputEzSdate" value="2026-10-01" onchange="syncEzsearchUrlFromInputs(); loadEzsearchData(true);" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
+            <input type="date" id="inputEzSdate" value="2026-10-01" onchange="syncEzsearchUrlFromInputs();" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
           </div>
           <div>
             <label style="font-size:0.82rem; color:var(--muted);">資料迄日：</label>
-            <input type="date" id="inputEzEdate" value="2026-10-23" onchange="syncEzsearchUrlFromInputs(); loadEzsearchData(true);" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
+            <input type="date" id="inputEzEdate" value="2026-10-23" onchange="syncEzsearchUrlFromInputs();" style="padding:6px 10px; font-weight:600; color-scheme:dark; background:#0f172a; color:var(--text); border:1px solid var(--border); border-radius:6px; cursor:pointer;" />
           </div>
-          <button class="btn-warn" onclick="loadEzsearchData(true)">執行查詢</button>
           <div style="margin-left:auto;">
             <input type="text" id="inputEzFilter" placeholder="🔍 快速過濾代號 / 名稱 / 主旨..." oninput="filterEzsearchTable(this.value)" style="width:220px; padding:6px 12px;" />
           </div>
@@ -1221,12 +1241,12 @@
           <table id="tblEzsearch">
             <thead>
               <tr style="background:#1e293b; color:#93c5fd; text-align:left;">
-                <th style="padding:10px 12px; border:1px solid var(--border); width:135px;">公告日期時間</th>
-                <th style="padding:10px 12px; border:1px solid var(--border); width:125px;">市場產業別</th>
-                <th style="padding:10px 12px; border:1px solid var(--border); width:85px;">公司代號</th>
-                <th style="padding:10px 12px; border:1px solid var(--border); width:95px;">公司簡稱</th>
-                <th style="padding:10px 12px; border:1px solid var(--border); width:130px;">公告項目</th>
-                <th style="padding:10px 12px; border:1px solid var(--border);">公告主旨</th>
+                <th class="ez-sortable" data-sort="date" onclick="sortEzsearchBy('date')" style="padding:10px 12px; border:1px solid var(--border); width:135px;">公告日期時間<span class="ez-sort-ico"></span></th>
+                <th class="ez-sortable" data-sort="market" onclick="sortEzsearchBy('market')" style="padding:10px 12px; border:1px solid var(--border); width:125px;">市場產業別<span class="ez-sort-ico"></span></th>
+                <th class="ez-sortable" data-sort="coid" onclick="sortEzsearchBy('coid')" style="padding:10px 12px; border:1px solid var(--border); width:85px;">公司代號<span class="ez-sort-ico"></span></th>
+                <th class="ez-sortable" data-sort="coname" onclick="sortEzsearchBy('coname')" style="padding:10px 12px; border:1px solid var(--border); width:95px;">公司簡稱<span class="ez-sort-ico"></span></th>
+                <th class="ez-sortable" data-sort="an" onclick="sortEzsearchBy('an')" style="padding:10px 12px; border:1px solid var(--border); width:130px;">公告項目<span class="ez-sort-ico"></span></th>
+                <th class="ez-sortable" data-sort="subject" onclick="sortEzsearchBy('subject')" style="padding:10px 12px; border:1px solid var(--border);">公告主旨<span class="ez-sort-ico"></span></th>
                 <th style="padding:10px 12px; border:1px solid var(--border); width:85px; text-align:center;">詳細資料</th>
               </tr>
             </thead>
@@ -2320,13 +2340,88 @@
     }
 
     // ================================================================ 公告快易查功能
+    // 市場/產業選項清單 (來源：證交所公告快易查 https://mopsov.twse.com.tw/mops/web/json/industry.json)
+    const EZ_MARKET_OPTIONS = [
+      { value: "sii", label: "上市" },
+      { value: "otc", label: "上櫃" },
+    ];
+    const EZ_INDUSTRY_OPTIONS = {
+      // 上市 (CODE_L_TW)
+      sii: [
+        ["01","01水泥工業"],["02","02食品工業"],["03","03塑膠工業"],["04","04紡織纖維"],["05","05電機機械"],
+        ["06","06電器電纜"],["07","07化學生技醫療"],["08","08玻璃陶瓷"],["09","09造紙工業"],["10","10鋼鐵工業"],
+        ["11","11橡膠工業"],["12","12汽車工業"],["13","13電子工業"],["14","14建材營造"],["15","15航運業"],
+        ["16","16觀光餐旅業"],["17","17金融保險業"],["18","18貿易百貨"],["19","19綜合企業"],["20","20其他"],
+        ["21","21化學工業"],["22","22生技醫療業"],["23","23油電燃氣業"],["24","24半導體業"],["25","25電腦及週邊設備業"],
+        ["26","26光電業"],["27","27通信網路業"],["28","28電子零組件業"],["29","29電子通路業"],["30","30資訊服務業"],
+        ["31","31其他電子業"],["35","35綠能環保業"],["36","36數位雲端業"],["37","37運動休閒業"],["38","38居家生活業"],
+        ["91","91存託憑證"],
+      ],
+      // 上櫃 (CODE_O_TW)
+      otc: [
+        ["02","02食品工業"],["03","03塑膠工業"],["04","04紡織纖維"],["05","05電機機械"],["06","06電器電纜"],
+        ["07","07化學生技醫療"],["08","08玻璃陶瓷"],["10","10鋼鐵工業"],["11","11橡膠工業"],["13","13電子工業"],
+        ["14","14建材營造"],["15","15航運業"],["16","16觀光餐旅業"],["17","17金融業"],["20","20其他"],
+        ["21","21化學工業"],["22","22生技醫療業"],["23","23油電燃氣業"],["24","24半導體業"],["25","25電腦及週邊設備業"],
+        ["26","26光電業"],["27","27通信網路業"],["28","28電子零組件業"],["29","29電子通路業"],["30","30資訊服務業"],
+        ["31","31其他電子業"],["32","32文化創意業"],["33","33農業科技"],["35","35綠能環保業"],["36","36數位雲端業"],
+        ["37","37運動休閒業"],["38","38居家生活業"],["80","80管理股票"],["91","91存託憑證"],
+      ],
+    };
+    const EZ_DEFAULT_MARKET = "sii";
+    const EZ_DEFAULT_INDUSTRY = "17";
+
+    function populateEzIndustryOptions(market, selected) {
+      const sel = document.getElementById("selEzIndustry");
+      if (!sel) return;
+      const list = EZ_INDUSTRY_OPTIONS[market] || [];
+      sel.innerHTML = `<option value="">全部產業</option>` +
+        list.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
+      sel.value = list.some(([v]) => v === selected) ? selected : "";
+    }
+
+    function getEzMarketIndustry() {
+      const market = document.getElementById("selEzMarket")?.value || EZ_DEFAULT_MARKET;
+      const indSel = document.getElementById("selEzIndustry");
+      const industry = indSel ? indSel.value : EZ_DEFAULT_INDUSTRY;
+      return { market, industry };
+    }
+
+    function updateEzMarketSummary() {
+      const lbl = document.getElementById("lblEzMarketSummary");
+      if (!lbl) return;
+      const { market, industry } = getEzMarketIndustry();
+      const mLabel = (EZ_MARKET_OPTIONS.find(m => m.value === market) || {}).label || market;
+      const ind = (EZ_INDUSTRY_OPTIONS[market] || []).find(([v]) => v === industry);
+      lbl.textContent = `${mLabel} ${ind ? ind[1].replace(/^(\d+)/, "$1 ") : "全部產業"}`;
+    }
+
+    function onEzMarketChange() {
+      const { market, industry } = getEzMarketIndustry();
+      populateEzIndustryOptions(market, industry);
+      onEzIndustryChange();
+    }
+
+    function onEzIndustryChange() {
+      updateEzMarketSummary();
+      syncEzsearchUrlFromInputs();
+    }
+
+    function initEzMarketIndustry() {
+      const mSel = document.getElementById("selEzMarket");
+      if (mSel) mSel.value = EZ_DEFAULT_MARKET;
+      populateEzIndustryOptions(EZ_DEFAULT_MARKET, EZ_DEFAULT_INDUSTRY);
+      updateEzMarketSummary();
+    }
+
     function buildDefaultEzsearchUrl() {
       let rawSdate = (document.getElementById("inputEzSdate")?.value || "2026-10-01").trim();
       let rawEdate = (document.getElementById("inputEzEdate")?.value || "2026-10-23").trim();
       const sdate = rawSdate.replace(/-/g, "");
       const edate = rawEdate.replace(/-/g, "");
       const subject = (document.getElementById("inputEzSubject")?.value || "自結").trim();
-      return `https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=sii&CO_MARKET=17&CO_ID=&PRO_ITEM=M99&SUBJECT=${encodeURIComponent(subject)}&SDATE=${encodeURIComponent(sdate)}&EDATE=${encodeURIComponent(edate)}&lang=TW&AN=`;
+      const { market, industry } = getEzMarketIndustry();
+      return `https://mopsov.twse.com.tw/mops/web/ezsearch_query?step=00&RADIO_CM=1&TYPEK=${encodeURIComponent(market)}&CO_MARKET=${encodeURIComponent(industry)}&CO_ID=&PRO_ITEM=M99&SUBJECT=${encodeURIComponent(subject)}&SDATE=${encodeURIComponent(sdate)}&EDATE=${encodeURIComponent(edate)}&lang=TW&AN=`;
     }
 
     function syncEzsearchUrlFromInputs() {
@@ -2356,6 +2451,7 @@
       if (inputSubject) inputSubject.value = "自結";
       if (inputSdate) inputSdate.value = "2026-10-01";
       if (inputEdate) inputEdate.value = "2026-10-23";
+      initEzMarketIndustry();
       
       const defaultUrl = buildDefaultEzsearchUrl();
       const inputUrl = document.getElementById("inputEzUrl");
@@ -2412,9 +2508,40 @@
       }
     }
 
+    // 公告快易查表格排序 (點擊欄位標題：升冪 → 降冪 → 還原)
+    const EZ_SORT_KEYS = {
+      date:    it => `${it.CDATE || ""} ${it.CTIME || ""}`,
+      market:  it => `${it.TYPEK || ""} ${it.CODE_NAME || ""}`,
+      coid:    it => it.COMPANY_ID || "",
+      coname:  it => it.COMPANY_NAME || "",
+      an:      it => `${it.AN_CODE || ""} ${it.AN_NAME || ""}`,
+      subject: it => it.SUBJECT || "",
+    };
+
+    function sortEzsearchBy(key) {
+      const cur = state.ezSort || { key: null, dir: 0 };
+      let dir = 1;
+      if (cur.key === key) dir = cur.dir === 1 ? -1 : (cur.dir === -1 ? 0 : 1);
+      state.ezSort = { key: dir ? key : null, dir };
+      filterEzsearchTable(document.getElementById("inputEzFilter")?.value || "");
+    }
+
+    function applyEzsearchSort(items) {
+      const s = state.ezSort;
+      document.querySelectorAll("#tblEzsearch th.ez-sortable").forEach(th => {
+        th.classList.remove("asc", "desc");
+        if (s && s.key === th.dataset.sort) th.classList.add(s.dir === 1 ? "asc" : "desc");
+      });
+      if (!s || !s.key || !EZ_SORT_KEYS[s.key]) return items;
+      const getter = EZ_SORT_KEYS[s.key];
+      return items.slice().sort((a, b) =>
+        getter(a).localeCompare(getter(b), "zh-Hant", { numeric: true }) * s.dir);
+    }
+
     function renderEzsearchTable(items) {
       const tbody = document.getElementById("ezsearchTbody");
       if (!tbody) return;
+      items = applyEzsearchSort(items);
       document.getElementById("ezsearchShownCount").textContent = items.length;
       if (items.length === 0) {
         tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:24px; color:var(--muted);">查無符合條件之公告</td></tr>`;
@@ -2555,6 +2682,7 @@
       }
     }
 
+    window.addEventListener("DOMContentLoaded", initEzMarketIndustry);
     window.addEventListener("DOMContentLoaded", initApp);
   </script>
 </body>
