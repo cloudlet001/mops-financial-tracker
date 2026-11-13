@@ -835,7 +835,7 @@ class MopsDesktopApp(tk.Tk):
         self.c1_pane_config = tk.Frame(card1, bg="#1e293b")
         r1 = tk.Frame(self.c1_pane_config, bg="#1e293b")
         r1.pack(fill="x", pady=4)
-        tk.Label(r1, text="最新清單年月 (民國)：", bg="#1e293b", fg="#94a3b8", font=("Microsoft JhengHei UI", 9)).pack(side="left")
+        tk.Label(r1, text="最新清單年月 (民國 YYYMM)：", bg="#1e293b", fg="#94a3b8", font=("Microsoft JhengHei UI", 9)).pack(side="left")
         tk.Label(r1, text="YYY", bg="#1e293b", fg="#94a3b8", font=("Microsoft JhengHei UI", 9, "bold")).pack(side="left", padx=(4, 2))
         tk.Entry(
             r1,
@@ -851,15 +851,12 @@ class MopsDesktopApp(tk.Tk):
         ).pack(side="left", padx=2)
         tk.Label(r1, text="/", bg="#1e293b", fg="#64748b", font=("Consolas", 11, "bold")).pack(side="left", padx=2)
         tk.Label(r1, text="MM", bg="#1e293b", fg="#94a3b8", font=("Microsoft JhengHei UI", 9, "bold")).pack(side="left", padx=(2, 2))
-        tk.Entry(
+        ttk.Combobox(
             r1,
             textvariable=self.var_ym_month,
-            width=4,
-            bg="#0f172a",
-            fg="#f8fafc",
-            insertbackground="#f8fafc",
-            relief="solid",
-            bd=1,
+            values=[f"{m:02d}" for m in range(1, 13)],
+            width=3,
+            state="readonly",
             font=("Consolas", 10, "bold"),
             justify="center",
         ).pack(side="left", padx=(2, 8))
@@ -1417,7 +1414,7 @@ class MopsDesktopApp(tk.Tk):
         if ym and len(ym) >= 3:
             self.var_ym_year.set(ym[:-2])
             try:
-                self.var_ym_month.set(str(int(ym[-2:])))
+                self.var_ym_month.set(f"{int(ym[-2:]):02d}")
             except Exception:
                 self.var_ym_month.set(ym[-2:])
         self.var_ym.set(ym)

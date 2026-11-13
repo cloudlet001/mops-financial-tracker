@@ -592,12 +592,25 @@
           <!-- Tab Pane 1: 清單年月 & 兩年度選擇 -->
           <div id="card1Pane_config">
             <div class="form-row" style="align-items:center; gap:8px;">
-              <label>最新清單年月 (民國)：</label>
+              <label>最新清單年月 (民國 YYYMM)：</label>
               <span style="color:#94a3b8; font-size:0.85rem; font-weight:600;">YYY</span>
               <input type="number" id="inputYmYear" min="102" max="130" value="115" style="width:74px;" placeholder="115" oninput="renderSourceInfo()" onkeydown="if(event.key==='Enter')loadList()" />
               <span style="color:#64748b; font-weight:bold; font-size:1.05rem; margin:0 2px;">/</span>
               <span style="color:#94a3b8; font-size:0.85rem; font-weight:600;">MM</span>
-              <input type="number" id="inputYmMonth" min="1" max="12" value="10" style="width:62px;" placeholder="10" oninput="renderSourceInfo()" onkeydown="if(event.key==='Enter')loadList()" />
+              <select id="inputYmMonth" style="width:68px; text-align:center; font-weight:600; padding:6px 6px; cursor:pointer;" onchange="renderSourceInfo()" onkeydown="if(event.key==='Enter')loadList()">
+                <option value="01">01</option>
+                <option value="02">02</option>
+                <option value="03">03</option>
+                <option value="04">04</option>
+                <option value="05">05</option>
+                <option value="06">06</option>
+                <option value="07">07</option>
+                <option value="08">08</option>
+                <option value="09">09</option>
+                <option value="10" selected>10</option>
+                <option value="11">11</option>
+                <option value="12">12</option>
+              </select>
               <button class="btn-ghost" id="btnLoadList" onclick="loadList()">🔄 載入清單</button>
             </div>
             <div class="form-row" style="margin-top:12px;">
@@ -1372,7 +1385,7 @@
     function setListYmInputs(ym) {
       if (!ym || ym.length < 3) return;
       const y = ym.slice(0, -2);
-      const m = parseInt(ym.slice(-2), 10);
+      const m = String(parseInt(ym.slice(-2), 10)).padStart(2, "0");
       const yEl = document.getElementById("inputYmYear");
       const mEl = document.getElementById("inputYmMonth");
       if (yEl) yEl.value = y;
