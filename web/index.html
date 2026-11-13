@@ -269,6 +269,103 @@
       background: var(--tbl-head);
       box-shadow: 0 1px 0 var(--border);
     }
+    /* 固定前欄位 (水平捲動時保持 Fixed) */
+    .sticky-col-1 {
+      position: sticky !important;
+      left: 0 !important;
+      width: 44px !important;
+      min-width: 44px !important;
+      max-width: 44px !important;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      z-index: 5;
+      text-align: center;
+      box-sizing: border-box;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .sticky-col-2 {
+      position: sticky !important;
+      left: 44px !important;
+      min-width: 140px;
+      z-index: 5;
+      text-align: left;
+      box-sizing: border-box;
+      border-right: 1px solid var(--border);
+      box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.45);
+    }
+    .table-scroll-wrap thead th.sticky-col-1 {
+      z-index: 30 !important;
+      top: 0 !important;
+      background: var(--tbl-head) !important;
+    }
+    .table-scroll-wrap thead th.sticky-col-2 {
+      z-index: 30 !important;
+      top: 0 !important;
+      box-shadow: 0 1px 0 var(--border), 3px 0 6px -2px rgba(0, 0, 0, 0.45);
+    }
+    .table-scroll-wrap tbody td.sticky-col-1,
+    .table-scroll-wrap tbody td.sticky-col-2 {
+      background: var(--panel);
+    }
+    .table-scroll-wrap tbody tr:hover td.sticky-col-1,
+    .table-scroll-wrap tbody tr:hover td.sticky-col-2 {
+      background: #253347 !important;
+    }
+    .table-scroll-wrap tbody tr.row-updated td.sticky-col-1,
+    .table-scroll-wrap tbody tr.row-updated td.sticky-col-2 {
+      background: #1b2f38 !important;
+    }
+    .table-scroll-wrap tbody tr.row-updated:hover td.sticky-col-1,
+    .table-scroll-wrap tbody tr.row-updated:hover td.sticky-col-2 {
+      background: #223c46 !important;
+    }
+    .table-scroll-wrap tbody tr.row-loading td.sticky-col-1,
+    .table-scroll-wrap tbody tr.row-loading td.sticky-col-2 {
+      background: #1e3352 !important;
+    }
+
+    /* 投資表固定前兩欄: 代號 & 名稱 */
+    .sticky-inv-1 {
+      position: sticky !important;
+      left: 0 !important;
+      width: 72px !important;
+      min-width: 72px !important;
+      max-width: 72px !important;
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+      z-index: 5;
+      text-align: left;
+      box-sizing: border-box;
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .sticky-inv-2 {
+      position: sticky !important;
+      left: 72px !important;
+      min-width: 80px;
+      z-index: 5;
+      text-align: left;
+      box-sizing: border-box;
+      border-right: 1px solid var(--border);
+      box-shadow: 3px 0 6px -2px rgba(0, 0, 0, 0.45);
+    }
+    .table-scroll-wrap thead th.sticky-inv-1 {
+      z-index: 30 !important;
+      top: 0 !important;
+      background: var(--tbl-head) !important;
+    }
+    .table-scroll-wrap thead th.sticky-inv-2 {
+      z-index: 30 !important;
+      top: 0 !important;
+      box-shadow: 0 1px 0 var(--border), 3px 0 6px -2px rgba(0, 0, 0, 0.45);
+    }
+    .table-scroll-wrap tbody td.sticky-inv-1,
+    .table-scroll-wrap tbody td.sticky-inv-2 {
+      background: var(--panel);
+    }
+    .table-scroll-wrap tbody tr:hover td.sticky-inv-1,
+    .table-scroll-wrap tbody tr:hover td.sticky-inv-2 {
+      background: #253347 !important;
+    }
     th.ez-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
     th.ez-sortable:hover { color: #f8fafc; background: #273449; }
     th.ez-sortable .ez-sort-ico { margin-left: 4px; font-size: 0.75rem; color: #64748b; }
@@ -533,8 +630,8 @@
         <table>
           <thead>
             <tr>
-              <th class="sortable sorted" id="thInv_co_id" style="text-align:left;" onclick="sortInvestTable('co_id')">代號<span class="sort-icon">▲</span></th>
-              <th class="sortable" id="thInv_name" style="text-align:left;" onclick="sortInvestTable('name')">名稱<span class="sort-icon">⇅</span></th>
+              <th class="sortable sorted sticky-inv-1" id="thInv_co_id" style="text-align:left;" onclick="sortInvestTable('co_id')">代號<span class="sort-icon">▲</span></th>
+              <th class="sortable sticky-inv-2" id="thInv_name" style="text-align:left;" onclick="sortInvestTable('name')">名稱<span class="sort-icon">⇅</span></th>
               <th class="sortable" id="thInv_price" onclick="sortInvestTable('price')">股價 (元)<span class="sort-icon">⇅</span></th>
               <th class="sortable" id="thInv_volume" onclick="sortInvestTable('volume')">成交量 (張)<span class="sort-icon">⇅</span></th>
               <th class="sortable" id="thInv_capital" onclick="sortInvestTable('capital')" title="已發行普通股股本（排除特別股，與 XQ 及券商指標一致）">普通股本 (億元)<span class="sort-icon">⇅</span></th>
@@ -746,8 +843,8 @@
           <table>
             <thead>
               <tr>
-                <th style="width:42px;"><input type="checkbox" id="chkAllTable" onchange="selectAll(this.checked)" /></th>
-                <th class="sortable sorted" id="thSort_co_id" style="text-align:left;" onclick="sortTable('co_id')">金融股 (代號 名稱)<span class="sort-icon">▲</span></th>
+                <th class="sticky-col-1" style="width:44px;"><input type="checkbox" id="chkAllTable" onchange="selectAll(this.checked)" /></th>
+                <th class="sortable sorted sticky-col-2" id="thSort_co_id" style="text-align:left;" onclick="sortTable('co_id')">金融股 (代號 名稱)<span class="sort-icon">▲</span></th>
                 <th class="sortable" id="thSort_report_type" onclick="sortTable('report_type')">報表類型<span class="sort-icon">⇅</span></th>
                 <th class="sortable" id="thListMon" onclick="sortTable('list_month_pretax')">115/09<br>本月稅前損益(清單)<span class="sort-icon">⇅</span></th>
                 <th class="sortable" id="thListCum" onclick="sortTable('list_cum_pretax')">115/09<br>本年累計稅前損益(清單)<span class="sort-icon">⇅</span></th>
@@ -1606,7 +1703,8 @@
       for (const [id, col, labelHtml] of headerMap) {
         const el = document.getElementById(id);
         if (!el) continue;
-        el.className = state.sortCol === col ? "sortable sorted" : "sortable";
+        const stickyClass = (id === "thSort_co_id") ? " sticky-col-2" : "";
+        el.className = (state.sortCol === col ? "sortable sorted" : "sortable") + stickyClass;
         el.innerHTML = `${labelHtml}${sortIconHtml(col)}`;
       }
 
@@ -1696,8 +1794,8 @@
         }
 
         return `<tr class="${comp ? 'row-updated' : ''} ${isLoading ? 'row-loading' : ''}" onmouseenter="onSourceCoChange('${s.co_id}')">
-          <td class="center"><input type="checkbox" ${isSel ? 'checked' : ''} onchange="toggleStock('${s.co_id}')" /></td>
-          <td>${nameCell}</td>
+          <td class="center sticky-col-1"><input type="checkbox" ${isSel ? 'checked' : ''} onchange="toggleStock('${s.co_id}')" /></td>
+          <td class="sticky-col-2">${nameCell}</td>
           <td class="center"><span class="tag">${s.report_type}</span></td>
           <td class="num">${fmtNum(s.list_month_pretax)}</td>
           <td class="num">${fmtNum(s.list_cum_pretax)}</td>
@@ -2121,12 +2219,13 @@
         const th = document.getElementById("thInv_" + c);
         if (th) {
           const isSorted = (c === "eps_self") ? (state.investSortCol === "eps_self_cum") : (c === state.investSortCol);
+          const stickyCls = (c === "co_id") ? " sticky-inv-1" : (c === "name" ? " sticky-inv-2" : "");
           if (isSorted) {
-            th.className = "sortable sorted";
+            th.className = "sortable sorted" + stickyCls;
             const icon = th.querySelector(".sort-icon");
             if (icon) icon.textContent = state.investSortAsc ? "▲" : "▼";
           } else {
-            th.className = "sortable";
+            th.className = "sortable" + stickyCls;
             const icon = th.querySelector(".sort-icon");
             if (icon) icon.textContent = "⇅";
           }
@@ -2177,12 +2276,12 @@
         const divYearBadge = item.dividend_year ? `<span style="font-size:0.7rem; color:var(--muted); margin-left:3px;" title="股利年度">(${item.dividend_year})</span>` : "";
 
         return `<tr>
-          <td>
+          <td class="sticky-inv-1">
             <a class="stock-link" onclick="openStockDetail('${item.co_id}')" title="點擊檢視 ${item.co_id} ${item.name} 完整損益比對表">
               ${item.co_id} 🔍
             </a>
           </td>
-          <td>
+          <td class="sticky-inv-2">
             <a class="stock-link" onclick="openStockDetail('${item.co_id}')" title="點擊檢視 ${item.co_id} ${item.name} 完整損益比對表">
               ${item.name}
             </a>
