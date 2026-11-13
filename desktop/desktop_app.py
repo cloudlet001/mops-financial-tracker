@@ -660,7 +660,9 @@ class MopsDesktopApp(tk.Tk):
         self.is_updating = False
         self.stop_requested = False
 
-        self.var_ym = tk.StringVar(value="11509")
+        self.var_ym = tk.StringVar(value="11510")
+        self.var_ym_year = tk.StringVar(value="115")
+        self.var_ym_month = tk.StringVar(value="10")
         self.var_y1 = tk.IntVar(value=self.default_y1)
         self.var_y2 = tk.IntVar(value=self.default_y2)
         self.var_fetch_mode = tk.StringVar(value="db")
@@ -833,18 +835,34 @@ class MopsDesktopApp(tk.Tk):
         self.c1_pane_config = tk.Frame(card1, bg="#1e293b")
         r1 = tk.Frame(self.c1_pane_config, bg="#1e293b")
         r1.pack(fill="x", pady=4)
-        tk.Label(r1, text="最新清單年月 (民國 YYYMM)：", bg="#1e293b", fg="#94a3b8", font=("Microsoft JhengHei UI", 9)).pack(side="left")
+        tk.Label(r1, text="最新清單年月 (民國)：", bg="#1e293b", fg="#94a3b8", font=("Microsoft JhengHei UI", 9)).pack(side="left")
+        tk.Label(r1, text="YYY", bg="#1e293b", fg="#94a3b8", font=("Microsoft JhengHei UI", 9, "bold")).pack(side="left", padx=(4, 2))
         tk.Entry(
             r1,
-            textvariable=self.var_ym,
-            width=9,
+            textvariable=self.var_ym_year,
+            width=5,
             bg="#0f172a",
             fg="#f8fafc",
             insertbackground="#f8fafc",
             relief="solid",
             bd=1,
-            font=("Consolas", 10),
-        ).pack(side="left", padx=6)
+            font=("Consolas", 10, "bold"),
+            justify="center",
+        ).pack(side="left", padx=2)
+        tk.Label(r1, text="/", bg="#1e293b", fg="#64748b", font=("Consolas", 11, "bold")).pack(side="left", padx=2)
+        tk.Label(r1, text="MM", bg="#1e293b", fg="#94a3b8", font=("Microsoft JhengHei UI", 9, "bold")).pack(side="left", padx=(2, 2))
+        tk.Entry(
+            r1,
+            textvariable=self.var_ym_month,
+            width=4,
+            bg="#0f172a",
+            fg="#f8fafc",
+            insertbackground="#f8fafc",
+            relief="solid",
+            bd=1,
+            font=("Consolas", 10, "bold"),
+            justify="center",
+        ).pack(side="left", padx=(2, 8))
         self.btn_load_list = tk.Button(
             r1,
             text="🔄 載入清單",
@@ -1384,8 +1402,28 @@ class MopsDesktopApp(tk.Tk):
                 break
         self.render_source_info()
 
+    def get_list_ym(self):
+        y = self.var_ym_year.get().strip()
+        m = self.var_ym_month.get().strip()
+        try:
+            m_int = int(m)
+            if 1 <= m_int <= 12:
+                return f"{y}{m_int:02d}"
+        except Exception:
+            pass
+        return f"{y}{m}"
+
+    def set_list_ym(self, ym: str):
+        if ym and len(ym) >= 3:
+            self.var_ym_year.set(ym[:-2])
+            try:
+                self.var_ym_month.set(str(int(ym[-2:])))
+            except Exception:
+                self.var_ym_month.set(ym[-2:])
+        self.var_ym.set(ym)
+
     def render_source_info(self):
-        ym = self.var_ym.get().strip() or self.ym or "11509"
+        ym = self.get_list_ym() or self.ym or "11510"
         y1 = self.var_y1.get()
         y2 = self.var_y2.get()
         co_id = self.active_tab if self.active_tab != "SUMMARY" else (self.source_co_id or "2881")
@@ -1424,7 +1462,7 @@ class MopsDesktopApp(tk.Tk):
         )
 
     def open_mops_list_report(self):
-        ym = self.var_ym.get().strip() or self.ym or "11509"
+        ym = self.get_list_ym() or self.ym or "11510"
         self.set_status(f"正在向 MOPS 取得 {ym} 自結清單報表簽章網址並開啟瀏覽器...")
 
         def _worker():
@@ -1509,14 +1547,14 @@ class MopsDesktopApp(tk.Tk):
         threading.Thread(target=_worker, daemon=True).start()
 
     def _on_init_loaded(self, list_data: dict):
-        self.var_ym.set(list_data["ym"])
+        self.set_list_ym(list_data["ym"])
         self.apply_list_data(list_data)
         self.set_status(
             f"已載入 {self.list_year}年{self.list_month}月 金融股自結清單（共 {len(self.stocks)} 檔）。請勾選個股後點擊「🚀 更新選取個股」或「⚡ 一鍵更新全部 (ALL)」。"
         )
 
     def on_click_load_list(self):
-        ym = self.var_ym.get().strip()
+        ym = self.get_list_ym()
         if not ym:
             return
         force = self.var_fetch_mode.get() == "force"
@@ -1541,6 +1579,7 @@ class MopsDesktopApp(tk.Tk):
         self.set_status(f"已載入 {self.ym} 清單（{src_txt}），共擷取 {len(self.stocks)} 檔金融股。")
 
     def apply_list_data(self, list_data: dict):
+        self.set_list_ym(list_data["ym"])
         self.ym = list_data["ym"]
         self.list_year = list_data["year"]
         self.list_month = list_data["month"]
