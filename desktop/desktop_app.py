@@ -411,12 +411,22 @@ def find_latest_ym(market="1"):
     raise RuntimeError("找不到最近 6 個月的月自結損益清單")
 
 
-def fetch_company_year_data(co_id, year, force=False):
+def fetch_company_year_data(co_id, year, force=False, min_month=None):
     co_id, year = str(co_id), int(year)
     if not force:
         db_res = db_get_company_year(co_id, year)
         if db_res:
-            return db_res["name"], db_res["month_map"], "db", db_res["updated_at"]
+            mmap = db_res["month_map"]
+            need_refresh = False
+            if min_month is not None:
+                try:
+                    target_m = int(min_month)
+                    if target_m > 0 and target_m not in mmap:
+                        need_refresh = True
+                except (ValueError, TypeError):
+                    pass
+            if not need_refresh:
+                return db_res["name"], mmap, "db", db_res["updated_at"]
 
     try:
         q1 = mops_get("ajax_t138sb02_q1", {
@@ -441,6 +451,9 @@ def fetch_company_year_data(co_id, year, force=False):
 
         html = mops_get("ajax_t138sb02", params)
     except Exception:
+        db_res = db_get_company_year(co_id, year)
+        if db_res:
+            return db_res["name"], db_res["month_map"], "db", db_res["updated_at"]
         return "", {}, "mops", now_str()
 
     soup = BeautifulSoup(html, "html.parser")
@@ -474,13 +487,39 @@ def fetch_company_year_data(co_id, year, force=False):
 
 def build_company_comparison(co_id, y1, y2, ref_month=None, force=False):
     y1, y2 = int(y1), int(y2)
-    name1, map1, src1, ts1 = fetch_company_year_data(co_id, y1, force=force)
-    name2, map2, src2, ts2 = fetch_company_year_data(co_id, y2, force=force)
+    name1, map1, src1, ts1 = fetch_company_year_data(co_id, y1, force=force, min_month=ref_month)
+    name2, map2, src2, ts2 = fetch_company_year_data(co_id, y2, force=force, min_month=ref_month)
     name = name2 or name1
+
+    # 兜底補充：若目標年度 y2 在指定月份 ref_month 仍缺漏，但 mops_list 中已有該年月(例如 11510)的自結損益
+    if ref_month:
+        try:
+            rm = int(ref_month)
+            if rm not in map2 or map2[rm].get("month_pretax") is None:
+                target_ym = f"{y2}{rm:02d}"
+                with DB_LOCK, sqlite3.connect(DB_PATH) as conn:
+                    conn.row_factory = sqlite3.Row
+                    lrow = conn.execute(
+                        "SELECT list_month_pretax, list_cum_pretax FROM mops_list WHERE ym = ? AND co_id = ?",
+                        (target_ym, str(co_id)),
+                    ).fetchone()
+                    if lrow and (lrow["list_month_pretax"] is not None or lrow["list_cum_pretax"] is not None):
+                        map2[rm] = {
+                            "month_pretax": int(lrow["list_month_pretax"]) if lrow["list_month_pretax"] is not None else None,
+                            "cum_pretax": int(lrow["list_cum_pretax"]) if lrow["list_cum_pretax"] is not None else None,
+                        }
+                        conn.execute(
+                            """INSERT OR REPLACE INTO company_monthly_profit (co_id, year, month, month_pretax, cum_pretax, updated_at)
+                               VALUES (?, ?, ?, ?, ?, ?)""",
+                            (str(co_id), y2, rm, map2[rm]["month_pretax"], map2[rm]["cum_pretax"], now_str()),
+                        )
+                        conn.commit()
+        except Exception:
+            pass
 
     avail_m2 = sorted(map2.keys())
     avail_m1 = sorted(map1.keys())
-    target_m = int(ref_month) if ref_month else (avail_m2[-1] if avail_m2 else (avail_m1[-1] if avail_m1 else None))
+    target_m = int(ref_month) if ref_month and int(ref_month) in map2 else (int(ref_month) if ref_month else (avail_m2[-1] if avail_m2 else (avail_m1[-1] if avail_m1 else None)))
 
     rows = []
     for m in range(1, 13):
