@@ -411,22 +411,73 @@ def find_latest_ym(market="1"):
     raise RuntimeError("找不到最近 6 個月的月自結損益清單")
 
 
-def fetch_company_year_data(co_id, year, force=False, min_month=None):
+def check_company_cache_freshness(co_id, year, target_month=None, req_ym=None, is_target_year=True):
+    """
+    【資料庫優先 之 時間嚴格檢驗】
+    依據「目前更新時間 / 目標期別 (target_month, req_ym)」嚴格檢驗資料庫快取：
+    資料庫若有資料，資料必須是「目前要更新的資料」，若時間不吻合就必須重抓！
+    """
+    co_id, year = str(co_id), int(year)
+    db_res = db_get_company_year(co_id, year)
+    if not db_res or not db_res.get("month_map"):
+        return False, "資料庫無此紀錄", None
+
+    mmap = db_res["month_map"]
+    cache_updated_at = str(db_res.get("updated_at", "")).strip()
+
+    if target_month is not None:
+        try:
+            tm = int(target_month)
+            if 1 <= tm <= 12:
+                if tm not in mmap:
+                    return False, f"快取缺少目標 {tm} 月份 (資料庫僅到 {max(mmap.keys()) if mmap else 0} 月)", db_res
+
+                t_val = mmap[tm]
+                if t_val.get("month_pretax") is None and t_val.get("cum_pretax") is None:
+                    return False, f"快取目標 {tm} 月份為空值 (無損益數據)", db_res
+
+                if is_target_year:
+                    max_m = max(mmap.keys())
+                    if max_m < tm:
+                        return False, f"快取最大月份 ({max_m}月) 落後於目標月份 ({tm}月)", db_res
+
+                    cal_year = year + 1911
+                    min_release_prefix = f"{cal_year:04d}-{tm:02d}-28"
+                    if cache_updated_at and cache_updated_at < min_release_prefix:
+                        return False, f"快取更新時間 ({cache_updated_at}) 早於該月自結損益公告期 ({min_release_prefix})", db_res
+
+                    chk_ym = str(req_ym).strip() if req_ym else f"{year}{tm:02d}"
+                    with DB_LOCK, sqlite3.connect(DB_PATH) as conn:
+                        conn.row_factory = sqlite3.Row
+                        lrow = conn.execute(
+                            "SELECT list_month_pretax, list_cum_pretax, updated_at FROM mops_list WHERE ym = ? AND co_id = ?",
+                            (chk_ym, co_id),
+                        ).fetchone()
+                        if lrow:
+                            l_mon = to_num(lrow["list_month_pretax"])
+                            l_cum = to_num(lrow["list_cum_pretax"])
+                            if l_mon is not None and t_val.get("month_pretax") is None:
+                                return False, f"清單已發布 {chk_ym} 本月稅前 {l_mon}，但個股快取為空", db_res
+                            if l_cum is not None and t_val.get("cum_pretax") is None:
+                                return False, f"清單已發布 {chk_ym} 累計稅前 {l_cum}，但個股快取為空", db_res
+                            if l_mon is not None and t_val.get("month_pretax") != l_mon:
+                                return False, f"個股快取本月損益 ({t_val.get('month_pretax')}) 與清單最新數字 ({l_mon}) 不吻合", db_res
+                            if l_cum is not None and t_val.get("cum_pretax") != l_cum:
+                                return False, f"個股快取累計損益 ({t_val.get('cum_pretax')}) 與清單最新數字 ({l_cum}) 不吻合", db_res
+        except Exception:
+            pass
+
+    return True, "快取時間與資料完全吻合", db_res
+
+
+def fetch_company_year_data(co_id, year, force=False, min_month=None, req_ym=None, is_target_year=True):
     co_id, year = str(co_id), int(year)
     if not force:
-        db_res = db_get_company_year(co_id, year)
-        if db_res:
-            mmap = db_res["month_map"]
-            need_refresh = False
-            if min_month is not None:
-                try:
-                    target_m = int(min_month)
-                    if target_m > 0 and target_m not in mmap:
-                        need_refresh = True
-                except (ValueError, TypeError):
-                    pass
-            if not need_refresh:
-                return db_res["name"], mmap, "db", db_res["updated_at"]
+        is_fresh, reason, db_res = check_company_cache_freshness(
+            co_id, year, target_month=min_month, req_ym=req_ym, is_target_year=is_target_year
+        )
+        if is_fresh and db_res:
+            return db_res["name"], db_res["month_map"], "db", db_res["updated_at"]
 
     try:
         q1 = mops_get("ajax_t138sb02_q1", {
@@ -485,23 +536,23 @@ def fetch_company_year_data(co_id, year, force=False, min_month=None):
     return name, month_map, "mops", ts
 
 
-def build_company_comparison(co_id, y1, y2, ref_month=None, force=False):
+def build_company_comparison(co_id, y1, y2, ref_month=None, req_ym=None, force=False):
     y1, y2 = int(y1), int(y2)
-    name1, map1, src1, ts1 = fetch_company_year_data(co_id, y1, force=force, min_month=ref_month)
-    name2, map2, src2, ts2 = fetch_company_year_data(co_id, y2, force=force, min_month=ref_month)
+    name1, map1, src1, ts1 = fetch_company_year_data(co_id, y1, force=force, min_month=ref_month, req_ym=None, is_target_year=False)
+    name2, map2, src2, ts2 = fetch_company_year_data(co_id, y2, force=force, min_month=ref_month, req_ym=req_ym, is_target_year=True)
     name = name2 or name1
 
     # 兜底補充：若目標年度 y2 在指定月份 ref_month 仍缺漏，但 mops_list 中已有該年月(例如 11510)的自結損益
-    if ref_month:
+    chk_ym = str(req_ym).strip() if req_ym else (f"{y2}{int(ref_month):02d}" if ref_month else None)
+    if ref_month and chk_ym:
         try:
             rm = int(ref_month)
             if rm not in map2 or map2[rm].get("month_pretax") is None:
-                target_ym = f"{y2}{rm:02d}"
                 with DB_LOCK, sqlite3.connect(DB_PATH) as conn:
                     conn.row_factory = sqlite3.Row
                     lrow = conn.execute(
                         "SELECT list_month_pretax, list_cum_pretax FROM mops_list WHERE ym = ? AND co_id = ?",
-                        (target_ym, str(co_id)),
+                        (str(chk_ym), str(co_id)),
                     ).fetchone()
                     if lrow and (lrow["list_month_pretax"] is not None or lrow["list_cum_pretax"] is not None):
                         map2[rm] = {
@@ -2062,7 +2113,7 @@ class MopsDesktopApp(tk.Tk):
                         self.set_status(f"[{mode_lbl}] 正在處理 {l} 的 {y1}/{y2} 年度公告自結損益表...", d, total),
                         self.render_summary_table(loading_co_id=c),
                     ))
-                    comp = build_company_comparison(cid, y1, y2, ref_month=self.list_month, force=force)
+                    comp = build_company_comparison(cid, y1, y2, ref_month=self.list_month, req_ym=self.ym, force=force)
                     self.companies[cid] = comp
                     if comp.get("source") == "db":
                         db_hits += 1

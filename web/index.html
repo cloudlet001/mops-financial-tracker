@@ -1937,7 +1937,7 @@
           setStatus(`[${modeLabel}] 正在處理 ${label} 的 ${y1}/${y2} 年度公告自結損益表...`, done, total);
           renderSummaryTable(coId);
 
-          const url = `/api/company?co_id=${encodeURIComponent(coId)}&y1=${y1}&y2=${y2}&month=${state.listMonth}&force=${force}`;
+          const url = `/api/company?co_id=${encodeURIComponent(coId)}&y1=${y1}&y2=${y2}&month=${state.listMonth}&ym=${encodeURIComponent(state.ym)}&force=${force}`;
           const resp = await fetch(url);
           const data = await resp.json();
           if (data.ok && data.company) {
